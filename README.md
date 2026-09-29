@@ -6,7 +6,7 @@
 
 <p align="center">
   <img alt="Android 7+" src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?logo=android&logoColor=white">
-  <img alt="Version 1.4.0" src="https://img.shields.io/badge/version-1.4.0-6D5DFC">
+  <img alt="Version 1.5.0" src="https://img.shields.io/badge/version-1.5.0-6D5DFC">
   <img alt="Hackathon prototype" src="https://img.shields.io/badge/status-hackathon%20prototype-F4B942">
   <img alt="Local first" src="https://img.shields.io/badge/data-local--first-1F9D8A">
 </p>
@@ -32,6 +32,10 @@ FIN turns consented transaction and financial-history data into a consolidated h
     <td align="center"><img src="docs/screenshots/predictive-insights.png" alt="Predictive cash-flow insights" width="270"><br><strong>Predictive insights</strong></td>
     <td align="center"><img src="docs/screenshots/ask-fin.png" alt="Personalized Ask FIN conversation" width="270"><br><strong>Personalized Ask FIN</strong></td>
   </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/action-impact.png" alt="Action Center with quantified expected impact" width="270"><br><strong>Quantified action impact</strong></td>
+    <td align="center"><img src="docs/screenshots/change-simulator.png" alt="Financial update and recommendation comparison" width="270"><br><strong>Live change simulator</strong></td>
+  </tr>
 </table>
 
 ## Expected outputs delivered
@@ -43,6 +47,9 @@ FIN turns consented transaction and financial-history data into a consolidated h
 | Future cash-flow gaps | Runs 500 reproducible Monte Carlo paths and reports median, stress (P10), upside (P90), and gap probability. |
 | Conversational financial guidance | Answers in offline evidence mode or through an optional free-model OpenRouter connection, using the current financial model and user goals. |
 | Login and analysis system | Includes passwordless demo OTP login, local sessions, CSV validation, a seven-stage analysis workspace, evidence records, and an audit trail. |
+| Expected action impact | Quantifies each recommendation with a timeframe, before/after values, confidence, assumptions, and missing information. |
+| Decision transparency | Separates observed facts, probabilistic predictions, and recommendations in both insights and conversational answers. |
+| Adaptive recommendations | Captures a before/after model snapshot whenever income, expenses, debt, savings, categories, or CSV data change. |
 
 ## Core capabilities
 
@@ -55,6 +62,9 @@ FIN turns consented transaction and financial-history data into a consolidated h
 - Recurring-obligation detection using median cadence and consistency confidence
 - 30-day probabilistic balance forecast with uncertainty bands
 - Personalized affordability, emergency-fund, debt-payoff, and spending-reduction recommendations
+- Quantified recommendation impact across monthly and six-month horizons
+- Separate observed-fact, model-prediction, and recommendation layers
+- Live change-impact comparison after adding income, expenses, debt, savings, or imported transactions
 - Correctable categories and immediate model recalculation
 - Recommendation action center with accept, complete, and dismiss feedback
 - Optional AI responses without embedding any provider key in the APK
@@ -91,7 +101,7 @@ The APK is a compact native Android shell around a local WebView application. An
 
 ## Install and demo
 
-1. Download [`FIN-Financial-Copilot-v1.4.0.apk`](https://github.com/AnantHejib/HACKMATRIX-5.0/releases/download/v1.4.0/FIN-Financial-Copilot-v1.4.0.apk).
+1. Download [`FIN-Financial-Copilot-v1.5.0.apk`](https://github.com/AnantHejib/HACKMATRIX-5.0/releases/download/v1.5.0/FIN-Financial-Copilot-v1.5.0.apk).
 2. Install it on Android 7.0 or newer. Android may ask you to allow installs from your file manager.
 3. Enter any valid email address or 10-15 digit mobile number.
 4. Use demo OTP `246810`.

@@ -43,7 +43,11 @@ The offline engine uses the current financial model and preferences. Optionally 
 
 ## 6. Turn insight into action
 
-Save a recommendation, open the action center, and mark it accepted or complete. Correct a transaction category to show immediate recalculation and the feedback loop.
+Open the action center and compare the expected monthly or six-month impact, confidence, timeframe, and limitations for every recommendation. Save a recommendation and mark it accepted or complete.
+
+## 7. Demonstrate adaptation
+
+Open **Data > Add update** and add an example income, expense, debt balance, or savings balance. FIN reruns the model and displays the before/after health score, cash-gap risk, safe-to-spend amount, debt, and leading recommendation. A CSV import, category correction, or full history update triggers the same comparison.
 
 ## Presenter notes
 

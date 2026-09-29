@@ -74,3 +74,15 @@ Using a deterministic seed makes the same input reproducible during a demo. The 
 
 Ask FIN uses calculated metrics together with the user's goal, monthly target, desired emergency-fund months, recommendation style, and time horizon. The local engine supports affordability checks, emergency-fund plans, debt-payoff estimates, and category-specific spending reductions. Optional AI receives only a summarized context.
 
+## Recommendation impact and change tracking
+
+Every generated action includes a quantified outcome, a timeframe, a confidence score, and an uncertainty statement. Depending on the action, FIN reports projected monthly cash released, six-month buffer growth, emergency-runway change, simple debt reduction, bill coverage, or estimated cash-gap risk change.
+
+FIN keeps three claim types separate:
+
+- **Observed fact:** direct arithmetic from imported transactions or clearly labeled user-entered balances. A coverage score warns when the dataset may be incomplete.
+- **Model prediction:** a probabilistic estimate with method, horizon, assumptions, and confidence.
+- **Recommendation:** a suggested response to the facts and predictions, with expected impact and limitations.
+
+Before any transaction, income, expense, debt, savings, category, or CSV update is applied, FIN stores the current model snapshot. After recalculation it compares health score, safe-to-spend, cash-gap probability, total debt, and the leading recommendation. This makes model sensitivity visible instead of silently replacing the previous answer.
+
