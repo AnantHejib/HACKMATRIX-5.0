@@ -16,16 +16,16 @@ The normalization stage standardizes dates, signs, categories, and merchant name
 
 ## Financial history
 
-The profile supplements transactions with cash balance, savings, investments, debt balances, monthly debt payments, credit limit and usage, income, and monthly net-worth snapshots.
+The profile supplements transactions with current cash balance, savings, investments, debt balances, emergency fund, credit limit and usage, and monthly net-worth snapshots. Each history point uses a `YYYY-MM` period key plus a display label so different years cannot collide.
 
 ## Health metrics
 
 | Metric | Calculation |
 | --- | --- |
-| Net worth | Liquid savings + investments - total debt |
+| Net worth | Current cash + liquid savings + investments - total debt |
 | Monthly cash flow | Monthly income - monthly spending |
 | Savings rate | Positive monthly cash flow / monthly income |
-| Emergency runway | Liquid savings / essential monthly spending |
+| Emergency runway | Emergency fund / essential monthly spending |
 | Credit utilization | Revolving credit used / revolving credit limit |
 | Debt-service pressure | Required monthly debt payments / monthly income |
 | Safe to spend | Available balance less near-term obligations and a safety buffer |
@@ -57,7 +57,15 @@ Forecasted fixed commitments are restricted to categories such as Housing, Debt,
 
 ## Debt pressure
 
-Debt pressure combines debt-service ratio, total outstanding debt, monthly income, and revolving-credit utilization. The interface shows contributing factors and practical mitigation actions instead of relying on a single unexplained label.
+Debt pressure is a bounded composite:
+
+```text
+pressure = 60% × debt-service-to-income
+         + 25% × (total debt / annualized income)
+         + 15% × revolving-credit utilization
+```
+
+The 0-100 result is an educational stress signal. Its contributing factors stay visible instead of being presented as an unexplained score.
 
 ## Cash-flow forecast
 
@@ -69,6 +77,12 @@ FIN runs 500 seeded Monte Carlo simulations over 30 days. Each path starts at th
 - gap probability: share of simulations that fall below zero.
 
 Using a deterministic seed makes the same input reproducible during a demo. The forecast is not a guarantee: missing transactions, changing income, unusual expenses, and short history can materially change the outcome.
+
+## Data quality and persistence
+
+Analysis model 2.0 normalizes income, spending, debt service, and category totals over the actual observed window, bounded to 30-90 days. Its quality score considers record volume, history span, category coverage, recency, duplicates, and uncategorized share. Forecast confidence combines model stability with this measured data quality.
+
+On Android, normalized transactions and user-entered history are authoritative in SQLite. Every distinct recalculation input also creates a capped analysis record containing the model version, SHA-256 input fingerprint, record count, health score, net worth, debt pressure, cash-gap probability, confidence, and a JSON result summary. See [Database design](DATABASE.md).
 
 ## Recommendation context
 

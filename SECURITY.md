@@ -6,7 +6,8 @@ FIN is a hackathon prototype. Its OTP is intentionally fixed for demonstration a
 
 ## Data and API keys
 
-- Prototype financial data is stored on the device.
+- Transactions, financial profile/history, and analysis audit records are stored in an app-private SQLite database on the device.
+- Android cloud backup is disabled for the application.
 - No OpenRouter or other provider key is committed to this repository or embedded in the APK.
 - A key entered in AI settings remains in app-local storage.
 - Optional AI calls send a compact financial summary and the user's question, not raw transaction rows.
@@ -14,7 +15,7 @@ FIN is a hackathon prototype. Its OTP is intentionally fixed for demonstration a
 
 ## Production hardening required
 
-A production deployment should add server-verified identity, encrypted secrets, secure token storage, certificate and network controls, rate limiting, data deletion/export controls, formal threat modeling, dependency scanning, and independent security review.
+A production deployment should add server-verified identity, encrypted secrets, database encryption where required by the threat model, secure token storage, certificate and network controls, rate limiting, data deletion/export controls, formal threat modeling, dependency scanning, and independent security review.
 
 ## Reporting a vulnerability
 

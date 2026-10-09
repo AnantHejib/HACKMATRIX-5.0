@@ -6,7 +6,7 @@
 
 <p align="center">
   <img alt="Android 7+" src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?logo=android&logoColor=white">
-  <img alt="Version 1.5.0" src="https://img.shields.io/badge/version-1.5.0-6D5DFC">
+  <img alt="Version 1.6.0" src="https://img.shields.io/badge/version-1.6.0-6D5DFC">
   <img alt="Hackathon prototype" src="https://img.shields.io/badge/status-hackathon%20prototype-F4B942">
   <img alt="Local first" src="https://img.shields.io/badge/data-local--first-1F9D8A">
 </p>
@@ -36,14 +36,17 @@ FIN turns consented transaction and financial-history data into a consolidated h
     <td align="center"><img src="docs/screenshots/action-impact.png" alt="Action Center with quantified expected impact" width="270"><br><strong>Quantified action impact</strong></td>
     <td align="center"><img src="docs/screenshots/change-simulator.png" alt="Financial update and recommendation comparison" width="270"><br><strong>Live change simulator</strong></td>
   </tr>
+  <tr>
+    <td align="center" colspan="2"><img src="docs/screenshots/data-vault.png" alt="Financial data vault with SQLite status and normalized transactions" width="270"><br><strong>Durable financial data vault</strong></td>
+  </tr>
 </table>
 
 ## Expected outputs delivered
 
 | Expected output | FIN implementation |
 | --- | --- |
-| Consolidated financial-health view | Combines transactions, balances, debt, credit utilization, savings, income, and history into one explainable dashboard. |
-| Spending and obligation analysis | Detects category trends, recurring commitments, anomalies, debt pressure, and safe-to-spend capacity. |
+| Consolidated financial-health view | Combines transactions, current cash, balances, debt, credit utilization, savings, income, and monthly history from a versioned SQLite data vault. |
+| Spending and obligation analysis | Normalizes the actual observed window, detects category trends and cadence-qualified commitments, and calculates composite debt pressure and safe-to-spend capacity. |
 | Future cash-flow gaps | Runs 500 reproducible Monte Carlo paths and reports median, stress (P10), upside (P90), and gap probability. |
 | Conversational financial guidance | Answers in offline evidence mode or through an optional free-model OpenRouter connection, using the current financial model and user goals. |
 | Login and analysis system | Includes passwordless demo OTP login, local sessions, CSV validation, a seven-stage analysis workspace, evidence records, and an audit trail. |
@@ -55,6 +58,8 @@ FIN turns consented transaction and financial-history data into a consolidated h
 
 - Consent-first onboarding with a synthetic demo dataset
 - Passwordless local prototype login and persistent on-device sessions
+- Versioned native SQLite storage with transactional writes and migration from earlier local prototype data
+- Persisted analysis audit records with input fingerprints, model version, confidence, and output summaries
 - Net worth, cash flow, savings rate, emergency runway, debt pressure, and credit utilization
 - Editable financial history and month-by-month net-worth tracking
 - CSV import with validation, duplicate checks, coverage scoring, and anomaly detection
@@ -76,7 +81,7 @@ FIN uses transparent statistical methods rather than presenting a black-box scor
 1. Monthly spending trend is estimated with ordinary least squares.
 2. Recent behavior is weighted with an EWMA using `alpha = 0.35`.
 3. Recurring payments require at least three matching events and are scored from interval and amount consistency.
-4. Debt pressure combines debt service, total debt, income, and revolving-credit utilization.
+4. Debt pressure combines debt-service ratio (60%), total-debt leverage (25%), and revolving-credit utilization (15%).
 5. The next 30 days are simulated across 500 deterministic-seed Monte Carlo paths.
 6. Every major result includes its method, assumptions, confidence, source records, and limitations.
 
@@ -88,7 +93,8 @@ See [Data model and analytics](docs/DATA_MODEL.md) for definitions and formulas.
 flowchart LR
     A[CSV or synthetic data] --> B[Validation and normalization]
     H[Financial history] --> B
-    B --> C[Local financial model]
+    B --> DB[Versioned SQLite data vault]
+    DB --> C[Local financial model 2.0]
     C --> D[Health dashboard]
     C --> E[Forecast and risk engine]
     C --> F[Offline Ask FIN]
@@ -97,11 +103,11 @@ flowchart LR
     G --> I
 ```
 
-The APK is a compact native Android shell around a local WebView application. Android handles file selection and device integration; the embedded interface performs analytics and stores prototype data locally. See [Architecture](docs/ARCHITECTURE.md) for the full flow.
+The APK is a compact native Android shell around a local WebView application. Android handles file selection, app-private SQLite persistence, and device integration; the embedded interface performs deterministic analytics. See [Architecture](docs/ARCHITECTURE.md) and [Database design](docs/DATABASE.md) for the full flow.
 
 ## Install and demo
 
-1. Download [`FIN-Financial-Copilot-v1.5.0.apk`](https://github.com/AnantHejib/HACKMATRIX-5.0/releases/download/v1.5.0/FIN-Financial-Copilot-v1.5.0.apk).
+1. Download [`FIN-Financial-Copilot-v1.6.0.apk`](https://github.com/AnantHejib/HACKMATRIX-5.0/releases/download/v1.6.0/FIN-Financial-Copilot-v1.6.0.apk).
 2. Install it on Android 7.0 or newer. Android may ask you to allow installs from your file manager.
 3. Enter any valid email address or 10-15 digit mobile number.
 4. Use demo OTP `246810`.
@@ -137,7 +143,7 @@ The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`. GitHub 
 
 ```text
 app/src/main/assets/index.html                 UI and financial analytics
-app/src/main/java/com/ctrlaltelite/fin/       Android host and CSV picker
+app/src/main/java/com/ctrlaltelite/fin/       Android host, SQLite layer, JS bridge, and CSV picker
 docs/                                         Architecture, model, and demo notes
 .github/workflows/android.yml                 Reproducible Android CI build
 FIN_Financial_Health_Copilot_...pptx          Original hackathon presentation
