@@ -10,6 +10,30 @@ permissions:
   contents: read
 
 jobs:
+  copilot-api:
+    name: Validate Copilot API
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Validate contracts and embedded client
+        run: npm run check
+
+      - name: Run API tests
+        run: npm test
+
   build:
     name: Build debug APK
     runs-on: ubuntu-latest

@@ -1,5 +1,8 @@
 apply plugin: 'com.android.application'
 
+def finApiBaseUrl = (project.findProperty('FIN_API_BASE_URL') ?: System.getenv('FIN_API_BASE_URL') ?: '').toString()
+def escapedFinApiBaseUrl = finApiBaseUrl.replace('\\', '\\\\').replace('"', '\\"')
+
 android {
     namespace 'com.ctrlaltelite.fin'
     compileSdk 35
@@ -8,8 +11,9 @@ android {
         applicationId 'com.ctrlaltelite.fin'
         minSdk 24
         targetSdk 35
-        versionCode 7
-        versionName '1.6.0'
+        versionCode 8
+        versionName '1.7.0'
+        buildConfigField 'String', 'FIN_API_BASE_URL', '"' + escapedFinApiBaseUrl + '"'
     }
 
     buildTypes {
@@ -21,5 +25,9 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
+    }
+
+    buildFeatures {
+        buildConfig true
     }
 }

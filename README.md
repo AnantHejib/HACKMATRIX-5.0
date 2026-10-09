@@ -6,12 +6,12 @@
 
 <p align="center">
   <img alt="Android 7+" src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?logo=android&logoColor=white">
-  <img alt="Version 1.6.0" src="https://img.shields.io/badge/version-1.6.0-6D5DFC">
+  <img alt="Version 1.7.0" src="https://img.shields.io/badge/version-1.7.0-6D5DFC">
   <img alt="Hackathon prototype" src="https://img.shields.io/badge/status-hackathon%20prototype-F4B942">
   <img alt="Local first" src="https://img.shields.io/badge/data-local--first-1F9D8A">
 </p>
 
-FIN turns consented transaction and financial-history data into a consolidated health view, probabilistic cash-flow forecasts, explainable risk signals, and personalized conversations. The core experience works offline; users may optionally connect an OpenRouter free-model API key at runtime.
+FIN turns consented transaction and financial-history data into a consolidated health view, probabilistic cash-flow forecasts, explainable risk signals, and personalized conversations. The core experience works offline; a versioned server API can add structured AI explanations without putting a provider credential in the APK.
 
 <p align="center">
   <a href="https://github.com/AnantHejib/HACKMATRIX-5.0/releases/latest"><strong>Download the latest APK</strong></a>
@@ -48,7 +48,7 @@ FIN turns consented transaction and financial-history data into a consolidated h
 | Consolidated financial-health view | Combines transactions, current cash, balances, debt, credit utilization, savings, income, and monthly history from a versioned SQLite data vault. |
 | Spending and obligation analysis | Normalizes the actual observed window, detects category trends and cadence-qualified commitments, and calculates composite debt pressure and safe-to-spend capacity. |
 | Future cash-flow gaps | Runs 500 reproducible Monte Carlo paths and reports median, stress (P10), upside (P90), and gap probability. |
-| Conversational financial guidance | Answers in offline evidence mode or through an optional free-model OpenRouter connection, using the current financial model and user goals. |
+| Conversational financial guidance | Answers locally or through a managed Copilot API whose schema requires facts, predictions, recommendations, expected impact, confidence, and change reasoning. |
 | Login and analysis system | Includes passwordless demo OTP login, local sessions, CSV validation, a seven-stage analysis workspace, evidence records, and an audit trail. |
 | Expected action impact | Quantifies each recommendation with a timeframe, before/after values, confidence, assumptions, and missing information. |
 | Decision transparency | Separates observed facts, probabilistic predictions, and recommendations in both insights and conversational answers. |
@@ -72,7 +72,9 @@ FIN turns consented transaction and financial-history data into a consolidated h
 - Live change-impact comparison after adding income, expenses, debt, savings, or imported transactions
 - Correctable categories and immediate model recalculation
 - Recommendation action center with accept, complete, and dismiss feedback
-- Optional AI responses without embedding any provider key in the APK
+- Managed structured-output Copilot API through Vercel AI Gateway, with no provider key embedded in the APK
+- Curated retrieval grounding from RBI, MoSPI, and Open Government Data India sources
+- Synthetic contract and behavior evaluations for changed income, expense, and debt scenarios
 
 ## How prediction works
 
@@ -98,7 +100,9 @@ flowchart LR
     C --> D[Health dashboard]
     C --> E[Forecast and risk engine]
     C --> F[Offline Ask FIN]
-    F --> G[Optional OpenRouter free model]
+    F --> G[Versioned Copilot API]
+    G --> GW[Vercel AI Gateway]
+    GW --> LM[Environment-selected model]
     E --> I[Evidence and actions]
     G --> I
 ```
@@ -107,7 +111,7 @@ The APK is a compact native Android shell around a local WebView application. An
 
 ## Install and demo
 
-1. Download [`FIN-Financial-Copilot-v1.6.0.apk`](https://github.com/AnantHejib/HACKMATRIX-5.0/releases/download/v1.6.0/FIN-Financial-Copilot-v1.6.0.apk).
+1. Download the APK from the [latest GitHub release](https://github.com/AnantHejib/HACKMATRIX-5.0/releases/latest).
 2. Install it on Android 7.0 or newer. Android may ask you to allow installs from your file manager.
 3. Enter any valid email address or 10-15 digit mobile number.
 4. Use demo OTP `246810`.
@@ -125,16 +129,21 @@ date,description,amount,category,type
 
 Dates use `YYYY-MM-DD`. Expenses can use negative amounts or `type=expense`. Imported data remains on the device.
 
-## Optional AI connection
+## Managed Copilot API
 
-Open **More > AI settings** and provide an OpenRouter key. FIN uses `openrouter/free`; the key is supplied at runtime and is never embedded in the APK. Only the user's question and a short calculated summary are sent, not raw transaction rows. Without a key, Ask FIN remains usable in offline evidence mode.
+The Android client calls `/api/v1/copilot` on a deployment URL compiled into the build. The server validates a bounded financial-summary contract, retrieves relevant official guidance, and requests schema-validated output through Vercel AI Gateway. Raw transactions, merchant descriptions, and AI credentials remain outside the request. Without an endpoint—or during an outage—Ask FIN automatically uses its on-device evidence mode.
+
+See [Copilot API](docs/COPILOT_API.md) for local setup, deployment, request boundaries, and production controls, and [dataset strategy](docs/DATASETS.md) for the grounding and evaluation approach.
 
 ## Build from source
 
-Requirements: JDK 17+ and Android SDK 35.
+Requirements: Node.js 22+, JDK 17+, and Android SDK 35.
 
 ```bash
-gradle assembleDebug
+npm ci
+npm run check
+npm test
+gradle assembleDebug -PFIN_API_BASE_URL=https://your-fin-api.vercel.app
 ```
 
 The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`. GitHub Actions also builds a downloadable debug artifact for every change to `main` and every pull request.
@@ -144,6 +153,8 @@ The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`. GitHub 
 ```text
 app/src/main/assets/index.html                 UI and financial analytics
 app/src/main/java/com/ctrlaltelite/fin/       Android host, SQLite layer, JS bridge, and CSV picker
+api/ and lib/                                 Versioned Copilot API, contracts, retrieval, and AI orchestration
+test/ and evals/                              API tests and synthetic behavior-evaluation cases
 docs/                                         Architecture, model, and demo notes
 .github/workflows/android.yml                 Reproducible Android CI build
 FIN_Financial_Health_Copilot_...pptx          Original hackathon presentation

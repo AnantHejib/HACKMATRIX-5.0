@@ -4,18 +4,19 @@
 
 FIN is a hackathon prototype. Its OTP is intentionally fixed for demonstration and must not be treated as production authentication. Do not use the app to store information you are not comfortable keeping in local app storage.
 
-## Data and API keys
+## Data and AI credentials
 
 - Transactions, financial profile/history, and analysis audit records are stored in an app-private SQLite database on the device.
 - Android cloud backup is disabled for the application.
-- No OpenRouter or other provider key is committed to this repository or embedded in the APK.
-- A key entered in AI settings remains in app-local storage.
-- Optional AI calls send a compact financial summary and the user's question, not raw transaction rows.
+- No provider key is committed to this repository, embedded in the APK, or entered in the mobile interface.
+- Vercel deployments authenticate to AI Gateway with platform OIDC. Local development may use `AI_GATEWAY_API_KEY` in an ignored `.env.local` file.
+- Copilot calls send a bounded calculated summary, preferences, recent conversation, and the user's question—not raw transaction rows or merchant descriptions.
+- API request bodies are capped at 32 KiB and validated with strict input and output schemas.
 - Cleartext network traffic is disabled.
 
 ## Production hardening required
 
-A production deployment should add server-verified identity, encrypted secrets, database encryption where required by the threat model, secure token storage, certificate and network controls, rate limiting, data deletion/export controls, formal threat modeling, dependency scanning, and independent security review.
+A production deployment should add server-verified identity, app attestation, encrypted secrets, database encryption where required by the threat model, secure token storage, certificate and network controls, Vercel Firewall rate limiting, abuse monitoring, data deletion/export controls, formal threat modeling, dependency scanning, and independent security review. `X-FIN-Client-ID` is a pseudonymous abuse signal, not authentication.
 
 ## Reporting a vulnerability
 

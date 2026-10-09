@@ -6,3 +6,8 @@ app/build/
 local.properties
 .idea/
 *.iml
+node_modules/
+.vercel/
+.env.local
+.env.*.local
+npm-debug.log*

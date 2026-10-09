@@ -1,6 +1,6 @@
 # Financial data vault
 
-FIN 1.6.0 moves the authoritative financial dataset into Android's app-private SQLite storage. Browser preview retains a local-storage fallback, but the installed APK uses schema version 1.
+FIN 1.7.0 keeps the authoritative financial dataset in Android's app-private SQLite storage. Browser preview retains a local-storage fallback, but the installed APK uses schema version 1.
 
 ## Schema
 
@@ -26,4 +26,4 @@ Imports are capped at 10,000 records. IDs, date shape, description, finite non-z
 
 ## Privacy boundary
 
-The database is scoped to the Android application and excluded from Android backup. It is not advertised as independently encrypted; device encryption and screen-lock policy still matter. OpenRouter is optional, no provider key is embedded, and raw transaction rows are not included in assistant requests.
+The database is scoped to the Android application and excluded from Android backup. It is not advertised as independently encrypted; device encryption and screen-lock policy still matter. No provider key is embedded, and raw transaction rows or merchant descriptions are not included in managed Copilot requests.

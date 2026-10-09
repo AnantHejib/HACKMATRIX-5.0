@@ -25,10 +25,14 @@ flowchart TD
     M --> AR[Persisted analysis run]
     AR --> DB
     M --> A[Offline Ask FIN]
-    A --> O{OpenRouter configured?}
+    A --> O{Managed endpoint configured?}
     O -- No --> Z[Evidence-based local answer]
-    O -- Yes --> API[openrouter/free]
-    API --> Z
+    O -- Yes --> API[POST /api/v1/copilot]
+    API --> V[Strict Zod contract]
+    V --> K[Curated RBI / MoSPI / OGD retrieval]
+    K --> G[Vercel AI Gateway]
+    G --> SO[Schema-validated answer]
+    SO --> Z
     Z --> AC[Action center and feedback]
 ```
 
@@ -40,6 +44,9 @@ flowchart TD
 | `FinDatabaseHelper.java` | Owns schema creation, validation, transactions, profile/history persistence, and the capped analysis audit log. |
 | `FinDatabaseBridge.java` | Exposes narrow JSON database operations to the bundled interface. |
 | `index.html` | Contains the responsive interface, deterministic analytics, forecast engine, and conversation logic. |
+| `api/v1/copilot.js` | Accepts a versioned, bounded summary and returns a structured explainable answer. |
+| `lib/contracts.js` | Enforces input/output schemas, size limits, confidence fields, and decision-layer separation. |
+| `lib/copilot-service.js` | Retrieves curated guidance and invokes the environment-selected AI Gateway model. |
 | Android resources | Define the launcher icon, theme, app label, and platform configuration. |
 | GitHub Actions | Builds a clean debug APK for pushes and pull requests. |
 
@@ -48,11 +55,12 @@ flowchart TD
 - Transactions, financial profile/history, and analysis snapshots are stored in app-private SQLite. Existing local prototype records are migrated on first launch.
 - Preferences, correction counters, chat history, and the demo session remain in WebView local storage.
 - Android backup is disabled so the financial database is not copied through the platform backup service.
-- No API key is bundled in source code or the APK.
-- Optional AI calls contain the question, preferences, and a compact calculated summary; they exclude raw transaction rows.
+- No AI provider key is bundled in source code or the APK. Vercel deployments use OIDC; local development can use an AI Gateway key in `.env.local`.
+- Copilot calls contain the question, recent conversation, preferences, calculated facts, predictions, precomputed recommendation impacts, and the latest before/after snapshot. They exclude raw transaction rows and merchant descriptions.
+- The language model cannot author authoritative financial values: the prompt and output schema constrain it to explaining the deterministic local model.
 - Cleartext traffic is disabled in the Android manifest.
 
 ## Design trade-offs
 
-This release hardens the financial-data and analysis slice, but it is not yet a production identity or banking system. A production version should split UI and domain logic into modules, add encrypted secret storage and user-controlled export/deletion, move provider calls behind a secured backend, and add automated database migration and instrumented Android tests. Authentication still requires server-verified OTP, secure tokens, rate limiting, and session revocation.
+This release provides a deployable Copilot service boundary, but it is not yet a production identity or banking system. Before accepting real financial data, add server-verified identity, device-bound secure tokens, Vercel Firewall rate limits, user-controlled export/deletion, database encryption where required, automated migration tests, Android instrumentation, threat modeling, and independent security review.
 

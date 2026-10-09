@@ -39,7 +39,7 @@ Then try:
 How can I build a three-month emergency fund?
 ```
 
-The offline engine uses the current financial model and preferences. Optionally configure an OpenRouter key under **More > AI settings** to demonstrate free-model conversational phrasing.
+The offline engine uses the current financial model and preferences. A deployment build can use the managed Copilot API to demonstrate a structured response that separately labels observed facts, model predictions, recommendations, expected impact, confidence, and what changed. Open **More > Copilot service** to check API health.
 
 ## 6. Turn insight into action
 
@@ -53,6 +53,6 @@ Open **Data > Add update** and add an example income, expense, debt balance, or 
 
 - Forecasts express uncertainty; they do not claim certainty.
 - Raw transaction rows stay on-device during optional AI requests.
-- No provider API key is embedded in the APK.
+- No provider API key is embedded in the APK or entered by the user.
 - The app is educational and does not replace regulated financial advice.
 

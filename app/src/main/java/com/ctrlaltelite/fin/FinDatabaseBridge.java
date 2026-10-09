@@ -23,6 +23,19 @@ final class FinDatabaseBridge {
     }
 
     @JavascriptInterface
+    public String runtimeConfig() {
+        try {
+            JSONObject config = new JSONObject();
+            config.put("apiBaseUrl", BuildConfig.FIN_API_BASE_URL);
+            config.put("apiVersion", "1.0");
+            config.put("appVersion", BuildConfig.VERSION_NAME);
+            return success(config).toString();
+        } catch (Exception exception) {
+            return failure(exception).toString();
+        }
+    }
+
+    @JavascriptInterface
     public String replaceTransactions(String json, String source) {
         try {
             return success(database.replaceTransactions(new JSONArray(json), source)).toString();

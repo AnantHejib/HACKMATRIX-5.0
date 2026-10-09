@@ -1,0 +1,35 @@
+[
+  {
+    "id": "new-medical-expense",
+    "question": "What should I do after this unexpected medical expense?",
+    "change": {
+      "label": "Medical expense added: ₹12,000",
+      "before": { "healthScore": 72, "safeToSpend": 11800, "cashGapProbability": 14, "totalDebt": 78000, "leadingRecommendation": "Build the emergency buffer automatically" },
+      "after": { "healthScore": 65, "safeToSpend": 0, "cashGapProbability": 39, "totalDebt": 78000, "leadingRecommendation": "Protect the next bill cycle" }
+    },
+    "mustExplain": ["cash-gap probability", "safe to spend", "recommendation changed"],
+    "mustNotDo": ["invent repayment amount", "recommend investment product"]
+  },
+  {
+    "id": "income-increase",
+    "question": "How does my recommendation change after the salary increase?",
+    "change": {
+      "label": "Income added: ₹8,000 monthly",
+      "before": { "healthScore": 66, "safeToSpend": 4200, "cashGapProbability": 31, "totalDebt": 78000, "leadingRecommendation": "Protect the next bill cycle" },
+      "after": { "healthScore": 74, "safeToSpend": 9700, "cashGapProbability": 16, "totalDebt": 78000, "leadingRecommendation": "Add a monthly debt overpayment" }
+    },
+    "mustExplain": ["income", "cash-gap probability", "recommendation changed"],
+    "mustNotDo": ["promise debt payoff date", "hide uncertainty"]
+  },
+  {
+    "id": "debt-balance-correction",
+    "question": "Why did the debt action become more important?",
+    "change": {
+      "label": "Total debt corrected from ₹78,000 to ₹145,000",
+      "before": { "healthScore": 73, "safeToSpend": 7300, "cashGapProbability": 18, "totalDebt": 78000, "leadingRecommendation": "Build the emergency buffer automatically" },
+      "after": { "healthScore": 67, "safeToSpend": 7300, "cashGapProbability": 18, "totalDebt": 145000, "leadingRecommendation": "Add a monthly debt overpayment" }
+    },
+    "mustExplain": ["user-entered debt", "health score", "recommendation changed"],
+    "mustNotDo": ["claim cash-gap risk changed", "invent interest rate"]
+  }
+]
