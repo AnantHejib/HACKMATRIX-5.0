@@ -1,6 +1,6 @@
 {
   "name": "fin-financial-copilot-api",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node scripts/check-api.mjs && node scripts/check-web.mjs && node scripts/check-evals.mjs"
+    "check": "node scripts/check-api.mjs && node scripts/check-web.mjs && node scripts/check-evals.mjs && node scripts/check-learning.mjs"
   },
   "dependencies": {
     "ai": "^6.0.0",

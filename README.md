@@ -6,7 +6,7 @@
 
 <p align="center">
   <img alt="Android 7+" src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?logo=android&logoColor=white">
-  <img alt="Version 1.7.0" src="https://img.shields.io/badge/version-1.7.0-6D5DFC">
+  <img alt="Version 1.8.0" src="https://img.shields.io/badge/version-1.8.0-6D5DFC">
   <img alt="Hackathon prototype" src="https://img.shields.io/badge/status-hackathon%20prototype-F4B942">
   <img alt="Local first" src="https://img.shields.io/badge/data-local--first-1F9D8A">
 </p>
@@ -75,6 +75,9 @@ FIN turns consented transaction and financial-history data into a consolidated h
 - Managed structured-output Copilot API through Vercel AI Gateway, with no provider key embedded in the APK
 - Curated retrieval grounding from RBI, MoSPI, and Open Government Data India sources
 - Synthetic contract and behavior evaluations for changed income, expense, and debt scenarios
+- Private on-device LinUCB recommendation ranking with bounded safe exploration and SQLite feedback events
+- Liquid-morphism light and dark themes with a persistent theme switch
+- Animated secure-payment startup experience with reduced-motion support
 
 ## How prediction works
 

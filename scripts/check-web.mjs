@@ -2,10 +2,10 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const html = fs.readFileSync(new URL('../app/src/main/assets/index.html', import.meta.url), 'utf8');
-const match = html.match(/<script>([\s\S]*?)<\/script>/);
+const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
 
-if (!match) throw new Error('Embedded application script was not found.');
-new vm.Script(match[1], { filename: 'app/src/main/assets/index.html' });
+if (!scripts.length) throw new Error('Embedded application scripts were not found.');
+scripts.forEach((match, index) => new vm.Script(match[1], { filename: `app/src/main/assets/index.html#script-${index + 1}` }));
 
 const forbidden = [
   'openrouter.ai/api',

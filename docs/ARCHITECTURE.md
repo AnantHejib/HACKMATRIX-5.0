@@ -34,6 +34,9 @@ flowchart TD
     G --> SO[Schema-validated answer]
     SO --> Z
     Z --> AC[Action center and feedback]
+    AC --> FB[(Local feedback events)]
+    FB --> CB[LinUCB safe-action ranker]
+    CB --> A
 ```
 
 ## Components
@@ -47,6 +50,7 @@ flowchart TD
 | `api/v1/copilot.js` | Accepts a versioned, bounded summary and returns a structured explainable answer. |
 | `lib/contracts.js` | Enforces input/output schemas, size limits, confidence fields, and decision-layer separation. |
 | `lib/copilot-service.js` | Retrieves curated guidance and invokes the environment-selected AI Gateway model. |
+| Local LinUCB policy | Reorders deterministic recommendation candidates from bounded, private interaction feedback. |
 | Android resources | Define the launcher icon, theme, app label, and platform configuration. |
 | GitHub Actions | Builds a clean debug APK for pushes and pull requests. |
 
@@ -58,6 +62,7 @@ flowchart TD
 - No AI provider key is bundled in source code or the APK. Vercel deployments use OIDC; local development can use an AI Gateway key in `.env.local`.
 - Copilot calls contain the question, recent conversation, preferences, calculated facts, predictions, precomputed recommendation impacts, and the latest before/after snapshot. They exclude raw transaction rows and merchant descriptions.
 - The language model cannot author authoritative financial values: the prompt and output schema constrain it to explaining the deterministic local model.
+- Adaptive learning excludes raw transactions and can change presentation order only; SQLite stores its versioned state and bounded feedback locally.
 - Cleartext traffic is disabled in the Android manifest.
 
 ## Design trade-offs

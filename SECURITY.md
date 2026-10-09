@@ -12,6 +12,7 @@ FIN is a hackathon prototype. Its OTP is intentionally fixed for demonstration a
 - Vercel deployments authenticate to AI Gateway with platform OIDC. Local development may use `AI_GATEWAY_API_KEY` in an ignored `.env.local` file.
 - Copilot calls send a bounded calculated summary, preferences, recent conversation, and the user's question—not raw transaction rows or merchant descriptions.
 - API request bodies are capped at 32 KiB and validated with strict input and output schemas.
+- Adaptive-ranking feedback stays on-device and excludes identity, raw transactions, merchant descriptions, and chat text. The learned policy cannot create or numerically alter financial recommendations.
 - Cleartext network traffic is disabled.
 
 ## Production hardening required

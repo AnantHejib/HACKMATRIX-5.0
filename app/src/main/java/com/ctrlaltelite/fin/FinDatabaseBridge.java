@@ -80,6 +80,15 @@ final class FinDatabaseBridge {
         }
     }
 
+    @JavascriptInterface
+    public String saveLearningUpdate(String eventJson, String policyJson) {
+        try {
+            return success(database.saveLearningUpdate(new JSONObject(eventJson), new JSONObject(policyJson))).toString();
+        } catch (Exception exception) {
+            return failure(exception).toString();
+        }
+    }
+
     void close() {
         database.close();
     }

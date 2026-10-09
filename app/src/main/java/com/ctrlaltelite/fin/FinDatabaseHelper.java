@@ -18,14 +18,21 @@ import java.util.Set;
 
 final class FinDatabaseHelper extends SQLiteOpenHelper {
     static final String DATABASE_NAME = "fin_health.db";
-    static final int DATABASE_VERSION = 1;
+    static final int DATABASE_VERSION = 2;
     private static final int MAX_ANALYSIS_RUNS = 100;
+    private static final int MAX_FEEDBACK_EVENTS = 2000;
     private static final int MAX_TRANSACTIONS = 10000;
     private static final Set<String> TYPES = new HashSet<>();
+    private static final Set<String> FEEDBACK_TYPES = new HashSet<>();
 
     static {
         TYPES.add("income");
         TYPES.add("expense");
+        FEEDBACK_TYPES.add("displayed");
+        FEEDBACK_TYPES.add("accepted");
+        FEEDBACK_TYPES.add("completed");
+        FEEDBACK_TYPES.add("dismissed");
+        FEEDBACK_TYPES.add("saved");
     }
 
     FinDatabaseHelper(Context context) {
@@ -83,11 +90,34 @@ final class FinDatabaseHelper extends SQLiteOpenHelper {
                 "confidence REAL NOT NULL," +
                 "result_json TEXT NOT NULL)");
         db.execSQL("CREATE INDEX idx_analysis_created_at ON analysis_runs(created_at DESC)");
+        createLearningTables(db);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Version 1 is the first durable schema. Future versions must use additive migrations.
+        if (oldVersion < 2) createLearningTables(db);
+    }
+
+    private void createLearningTables(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS feedback_events (" +
+                "event_id TEXT PRIMARY KEY NOT NULL," +
+                "decision_id TEXT NOT NULL," +
+                "action_id TEXT NOT NULL," +
+                "event_type TEXT NOT NULL CHECK(event_type IN ('displayed','accepted','completed','dismissed','saved'))," +
+                "reward REAL NOT NULL," +
+                "propensity REAL NOT NULL CHECK(propensity > 0 AND propensity <= 1)," +
+                "context_json TEXT NOT NULL," +
+                "details_json TEXT NOT NULL," +
+                "policy_version TEXT NOT NULL," +
+                "created_at INTEGER NOT NULL)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_feedback_created_at ON feedback_events(created_at DESC)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_feedback_action ON feedback_events(action_id, event_type)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS policy_state (" +
+                "id INTEGER PRIMARY KEY CHECK(id = 1)," +
+                "version TEXT NOT NULL," +
+                "interaction_count INTEGER NOT NULL," +
+                "state_json TEXT NOT NULL," +
+                "updated_at INTEGER NOT NULL)");
     }
 
     synchronized JSONObject loadBootstrap() throws JSONException {
@@ -95,8 +125,66 @@ final class FinDatabaseHelper extends SQLiteOpenHelper {
         JSONObject root = new JSONObject();
         root.put("transactions", readTransactions(db));
         root.put("financialHistory", readFinancialProfile(db));
+        root.put("learning", readLearningState(db));
         root.put("database", readStatus(db));
         return root;
+    }
+
+    synchronized JSONObject saveLearningUpdate(JSONObject event, JSONObject policy) throws JSONException {
+        String eventId = clean(event.optString("eventId", ""), 80);
+        String decisionId = clean(event.optString("decisionId", ""), 80);
+        String actionId = clean(event.optString("actionId", ""), 40);
+        String eventType = clean(event.optString("eventType", ""), 20).toLowerCase(Locale.US);
+        String policyVersion = clean(event.optString("policyVersion", "linucb-1.0"), 40);
+        double reward = event.optDouble("reward", Double.NaN);
+        double propensity = event.optDouble("propensity", Double.NaN);
+        if (eventId.isEmpty() || decisionId.isEmpty() || actionId.isEmpty()) {
+            throw new JSONException("Learning event identifiers are required");
+        }
+        if (!FEEDBACK_TYPES.contains(eventType)) throw new JSONException("Unsupported learning event type");
+        if (!Double.isFinite(reward) || reward < -2 || reward > 2) throw new JSONException("Reward must be between -2 and 2");
+        if (!Double.isFinite(propensity) || propensity <= 0 || propensity > 1) throw new JSONException("Propensity must be in (0, 1]");
+
+        String contextJson = event.optJSONObject("context") == null ? "{}" : event.optJSONObject("context").toString();
+        String detailsJson = event.optJSONObject("details") == null ? "{}" : event.optJSONObject("details").toString();
+        String stateJson = policy.toString();
+        if (contextJson.length() > 12000 || detailsJson.length() > 6000 || stateJson.length() > 100000) {
+            throw new JSONException("Learning payload exceeds local limits");
+        }
+        String version = clean(policy.optString("version", "linucb-1.0"), 40);
+        int interactions = policy.optInt("interactions", 0);
+        if (interactions < 0 || policy.optJSONObject("arms") == null) throw new JSONException("Invalid policy state");
+
+        SQLiteDatabase db = getWritableDatabase();
+        long now = System.currentTimeMillis();
+        db.beginTransaction();
+        try {
+            ContentValues feedback = new ContentValues();
+            feedback.put("event_id", eventId);
+            feedback.put("decision_id", decisionId);
+            feedback.put("action_id", actionId);
+            feedback.put("event_type", eventType);
+            feedback.put("reward", reward);
+            feedback.put("propensity", propensity);
+            feedback.put("context_json", contextJson);
+            feedback.put("details_json", detailsJson);
+            feedback.put("policy_version", policyVersion);
+            feedback.put("created_at", now);
+            db.insertWithOnConflict("feedback_events", null, feedback, SQLiteDatabase.CONFLICT_IGNORE);
+
+            ContentValues state = new ContentValues();
+            state.put("id", 1);
+            state.put("version", version);
+            state.put("interaction_count", interactions);
+            state.put("state_json", stateJson);
+            state.put("updated_at", now);
+            db.insertWithOnConflict("policy_state", null, state, SQLiteDatabase.CONFLICT_REPLACE);
+            db.execSQL("DELETE FROM feedback_events WHERE event_id NOT IN (SELECT event_id FROM feedback_events ORDER BY created_at DESC LIMIT " + MAX_FEEDBACK_EVENTS + ")");
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+        return readLearningState(db);
     }
 
     synchronized JSONObject replaceTransactions(JSONArray rows, String source) throws JSONException {
@@ -277,6 +365,19 @@ final class FinDatabaseHelper extends SQLiteOpenHelper {
         return profile;
     }
 
+    private JSONObject readLearningState(SQLiteDatabase db) throws JSONException {
+        JSONObject learning = new JSONObject();
+        learning.put("feedbackCount", scalarLong(db, "SELECT COUNT(*) FROM feedback_events"));
+        learning.put("lastFeedbackAt", scalarLong(db, "SELECT COALESCE(MAX(created_at), 0) FROM feedback_events"));
+        try (Cursor cursor = db.rawQuery("SELECT COALESCE(AVG(reward), 0) FROM feedback_events WHERE event_type != 'displayed'", null)) {
+            learning.put("averageReward", cursor.moveToFirst() ? cursor.getDouble(0) : 0);
+        }
+        try (Cursor cursor = db.query("policy_state", new String[]{"state_json"}, "id = 1", null, null, null, null)) {
+            if (cursor.moveToFirst()) learning.put("policyState", new JSONObject(cursor.getString(0)));
+        }
+        return learning;
+    }
+
     private JSONObject readStatus(SQLiteDatabase db) throws JSONException {
         JSONObject status = new JSONObject();
         status.put("engine", "SQLite");
@@ -284,6 +385,7 @@ final class FinDatabaseHelper extends SQLiteOpenHelper {
         status.put("transactionCount", scalarLong(db, "SELECT COUNT(*) FROM transactions"));
         status.put("snapshotCount", scalarLong(db, "SELECT COUNT(*) FROM financial_history"));
         status.put("analysisRuns", scalarLong(db, "SELECT COUNT(*) FROM analysis_runs"));
+        status.put("feedbackEvents", scalarLong(db, "SELECT COUNT(*) FROM feedback_events"));
         status.put("lastAnalysisAt", scalarLong(db, "SELECT COALESCE(MAX(created_at), 0) FROM analysis_runs"));
         return status;
     }

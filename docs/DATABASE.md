@@ -1,6 +1,6 @@
 # Financial data vault
 
-FIN 1.7.0 keeps the authoritative financial dataset in Android's app-private SQLite storage. Browser preview retains a local-storage fallback, but the installed APK uses schema version 1.
+FIN 1.8.0 keeps the authoritative financial dataset in Android's app-private SQLite storage. Browser preview retains a local-storage fallback, while the installed APK uses schema version 2 with an additive learning-state migration.
 
 ## Schema
 
@@ -10,6 +10,8 @@ FIN 1.7.0 keeps the authoritative financial dataset in Android's app-private SQL
 | `financial_profile` | Current consolidated balance snapshot | cash, savings, investments, total debt, emergency fund, credit values |
 | `financial_history` | Monthly net-worth series | unique `YYYY-MM` period, label, assets, debt |
 | `analysis_runs` | Reproducible model audit trail | SHA-256 input hash, model output JSON, health score, debt pressure, gap risk, confidence |
+| `feedback_events` | Private adaptive-ranking audit trail | decision/action IDs, event, bounded reward, propensity, context, policy version |
+| `policy_state` | Current local LinUCB state | version, interaction count, matrices and reward vectors, update time |
 
 Indexes support date-ordered transaction reads, category evidence lookups, and newest-first analysis reads. Foreign-key enforcement and write-ahead logging are enabled. Transaction replacement and profile/history updates run inside database transactions.
 
@@ -21,6 +23,7 @@ Indexes support date-ordered transaction reads, category evidence lookups, and n
 4. Profile saves replace the current profile and its 12-month history within one transaction.
 5. A recalculation stores a new analysis only when its input fingerprint differs from the latest run.
 6. The newest 100 analysis runs are retained.
+7. The newest 2,000 learning events are retained; policy updates and their triggering feedback are written transactionally.
 
 Imports are capped at 10,000 records. IDs, date shape, description, finite non-zero amount, type, non-negative balances, credit-score range, and credit-limit consistency are validated at the native boundary.
 
