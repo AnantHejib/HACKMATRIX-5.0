@@ -34,3 +34,24 @@ test('requires a configured gateway model', async () => {
   );
 });
 
+test('supports natural conversation without forcing financial analysis', async () => {
+  const response = await createCopilotAnswer({
+    ...validRequest(),
+    question: 'Hi',
+  }, {
+    model: 'openai/gpt-oss-20b',
+    generate: async options => {
+      assert.match(options.system, /greetings, small talk, and general questions naturally/i);
+      return {
+        output: {
+          directAnswer: 'Hi! I’m FIN. How can I help?',
+          sourceIds: [],
+        },
+      };
+    },
+  });
+
+  assert.equal(response.answer.directAnswer, 'Hi! I’m FIN. How can I help?');
+  assert.deepEqual(response.answer.sources, []);
+  assert.equal(response.answer.observedFacts, undefined);
+});
