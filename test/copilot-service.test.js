@@ -34,6 +34,18 @@ test('requires a configured gateway model', async () => {
   );
 });
 
+test('selected Hindi and Marathi locales reach the managed assistant instructions', async () => {
+  for (const [locale,name] of [['hi','Hindi'],['mr','Marathi']]) {
+    await createCopilotAnswer({...validRequest(),locale}, {
+      model:'test-model',
+      generate:async options=>{
+        assert.ok(options.system.includes('explanations in '+name));
+        return {output:validAnswer};
+      },
+    });
+  }
+});
+
 test('supports natural conversation without forcing financial analysis', async () => {
   const response = await createCopilotAnswer({
     ...validRequest(),

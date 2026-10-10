@@ -11,6 +11,11 @@ const { POST: copilot, OPTIONS: copilotOptions } = await import('../api/v1/copil
 
 const port = Number(process.env.PORT) || 3000;
 const page = new URL('../app/src/main/assets/index.html', import.meta.url);
+const staticAssets = new Map([
+  ['/fin-locale.js', new URL('../app/src/main/assets/fin-locale.js', import.meta.url)],
+  ['/forecast-reliability.js', new URL('../app/src/main/assets/forecast-reliability.js', import.meta.url)],
+  ['/financial-action-planner.js', new URL('../app/src/main/assets/financial-action-planner.js', import.meta.url)],
+]);
 const routes = {
   'GET /api/health': health,
   'OPTIONS /api/health': healthOptions,
@@ -30,6 +35,11 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/index.html')) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(fs.readFileSync(page));
+      return;
+    }
+    if (req.method === 'GET' && staticAssets.has(url.pathname)) {
+      res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(fs.readFileSync(staticAssets.get(url.pathname)));
       return;
     }
     const handler = routes[`${req.method} ${url.pathname}`];

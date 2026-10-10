@@ -19,6 +19,35 @@ const base = {
   paths: 500,
 };
 
+test('never pays more than outstanding principal and conserves cash each period', () => {
+  for (const sequence of buildPlans({ ...base, totalDebt: 6200, startingCash: 100000 }).sequences) {
+    let debt = 6200;
+    for (const row of sequence.periods) {
+      assert.ok(row.debtMinimum + row.extraDebt <= debt + .001);
+      debt = row.debtRemaining;
+      assert.ok(Math.abs(row.closing - (row.opening + row.income - row.essential - row.debtMinimum - row.discretionary - row.savings - row.extraDebt)) < .001);
+    }
+  }
+});
+
+test('reports an unmet declared savings target even when the reserve is maintained', () => {
+  const result = buildPlans({ ...base, monthlySavingsGoal: 100000 });
+  for (const sequence of result.sequences) {
+    assert.ok(sequence.feasibility.infeasible);
+    assert.ok(sequence.feasibility.conflicts.some(message => message.includes('Declared savings target')));
+    assert.ok(sequence.feasibility.proposals.some(message => message.includes('savings target')));
+  }
+});
+
+test('reports separate ordered income and expense prediction intervals for every month', () => {
+  for (const sequence of buildPlans(base).sequences) {
+    for (const ranges of [sequence.uncertainty.incomeRanges, sequence.uncertainty.expenseRanges]) {
+      assert.equal(ranges.length, 6);
+      for (const range of ranges) assert.ok(range.p10 >= 0 && range.p10 <= range.p50 && range.p50 <= range.p90);
+    }
+  }
+});
+
 test('compares three deterministic six-period action sequences with probabilistic ranges', () => {
   const result = buildPlans({ ...base, scenario: 'stable' });
   assert.equal(result.sequences.length, 3);
@@ -59,4 +88,35 @@ test('uncertainty can change the preferred plan', () => {
   const recommended = result.sequences.find(sequence => sequence.id === result.recommendedId);
   const riskNeutral = result.sequences.find(sequence => sequence.id === result.riskNeutralId);
   assert.ok(recommended.uncertainty.shortfallRisk < riskNeutral.uncertainty.shortfallRisk);
+});
+
+test('creates exactly three autonomous proposals with transaction-history evidence', () => {
+  const result = buildPlans({
+    ...base,
+    historyProfile: {
+      months: 6,
+      transactionCount: 124,
+      reliabilityLabel: 'Strong history basis',
+    },
+  });
+  assert.equal(result.sequences.length, 3);
+  assert.match(result.proposalMethod, /autonomous strategies derived from observed cash flow/i);
+  for (const sequence of result.sequences) {
+    assert.equal(sequence.autonomous, true);
+    assert.ok(sequence.rationale.length > 40);
+    assert.match(sequence.evidence, /6 observed months, 124 transactions, Strong history basis/);
+    assert.ok(sequence.discretionaryRate >= 0 && sequence.discretionaryRate <= 1);
+    assert.ok(sequence.savingsRate >= 0 && sequence.savingsRate <= 1);
+    assert.ok(sequence.debtRate >= 0 && sequence.debtRate <= 1);
+  }
+});
+
+test('history risk changes the autonomous proposal parameters', () => {
+  const stable = buildPlans({ ...base, incomeSd: 1000, startingCash: 40000, minimumReserve: 20000 });
+  const volatile = buildPlans({ ...base, incomeSd: 18000, startingCash: 5000, minimumReserve: 30000 });
+  const stableReserve = stable.sequences.find(sequence => sequence.id === 'reserve');
+  const volatileReserve = volatile.sequences.find(sequence => sequence.id === 'reserve');
+  assert.ok(volatileReserve.discretionaryRate < stableReserve.discretionaryRate);
+  assert.ok(volatileReserve.savingsRate > stableReserve.savingsRate);
+  assert.notEqual(volatileReserve.rationale, stableReserve.rationale);
 });

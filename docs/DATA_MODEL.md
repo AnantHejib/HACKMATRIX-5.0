@@ -30,7 +30,9 @@ The profile supplements transactions with current cash balance, savings, investm
 | Debt-service pressure | Required monthly debt payments / monthly income |
 | Safe to spend | Available balance less near-term obligations and a safety buffer |
 
-The dashboard groups metrics into cash flow, liquidity, debt, credit, and stability dimensions. Scores are directional educational indicators, not lending or credit decisions.
+The dashboard groups metrics into cash flow, liquidity, debt, credit, and stability dimensions. Each dimension exposes its observed evidence, interpretation, formula, weight, recommended response, confidence basis, and limitations. Scores are directional educational indicators, not lending or credit decisions.
+
+The consolidated score normally weights cash flow at 30%, liquidity at 25%, debt health at 20%, credit health at 15%, and income stability at 10%. Optional credit data that has not been provided is excluded instead of receiving a zero; the remaining available weights are normalized to 100%. A statement-only score uses payment cash flow at 40%, payment stability at 25%, data quality at 20%, and recurring-obligation load at 15%. Cash-gap risk affects cash-flow health only after the minimum-data policy permits reporting that probability.
 
 ## Spending trend
 
