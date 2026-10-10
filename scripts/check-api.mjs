@@ -3,8 +3,10 @@ const modules = [
   '../lib/knowledge-base.js',
   '../lib/http.js',
   '../lib/copilot-service.js',
+  '../lib/auth-service.js',
   '../api/health.js',
   '../api/v1/copilot.js',
+  '../api/v1/auth.js',
 ];
 
 for (const modulePath of modules) await import(modulePath);

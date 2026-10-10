@@ -8,6 +8,7 @@ for (const name of ['.env.local', '.env']) {
 
 const { GET: health, OPTIONS: healthOptions } = await import('../api/health.js');
 const { POST: copilot, OPTIONS: copilotOptions } = await import('../api/v1/copilot.js');
+const { POST: authPost, OPTIONS: authOptions, GET: authGet } = await import('../api/v1/auth.js');
 
 const port = Number(process.env.PORT) || 3000;
 const page = new URL('../app/src/main/assets/index.html', import.meta.url);
@@ -21,6 +22,14 @@ const routes = {
   'OPTIONS /api/health': healthOptions,
   'POST /api/v1/copilot': copilot,
   'OPTIONS /api/v1/copilot': copilotOptions,
+  'POST /api/v1/auth/send-otp': authPost,
+  'OPTIONS /api/v1/auth/send-otp': authOptions,
+  'POST /api/v1/auth/verify-otp': authPost,
+  'OPTIONS /api/v1/auth/verify-otp': authOptions,
+  'GET /api/v1/auth/status': authGet,
+  'OPTIONS /api/v1/auth/status': authOptions,
+  'POST /api/v1/auth/config': authPost,
+  'OPTIONS /api/v1/auth/config': authOptions,
 };
 
 async function readBody(req) {
