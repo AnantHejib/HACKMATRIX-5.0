@@ -1,0 +1,6 @@
+Optional on-device AI model used by FIN
+Qwen2.5-0.5B-Instruct, by Alibaba Cloud (Qwen team), licensed under Apache License 2.0.
+Converted for on-device use by LiteRT Community:
+https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct
+License: https://www.apache.org/licenses/LICENSE-2.0
+The model is optional and is not bundled in the repository or the default APK.

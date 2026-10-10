@@ -1,0 +1,88 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { spawn } from 'node:child_process';
+import { chromium } from 'playwright';
+
+// Development verification only. Synthetic rows enter through the actual CSV input.
+const port=3111,base=`http://127.0.0.1:${port}`;
+const server=spawn(process.execPath,['scripts/dev-server.mjs'],{env:{...process.env,PORT:String(port)},stdio:'pipe'});
+let browser;
+let page;
+const errors=[];
+try{
+  for(let i=0;i<80;i++){try{if((await fetch(base)).ok)break;}catch{}await new Promise(r=>setTimeout(r,100));}
+  browser=await chromium.launch({channel:'msedge',headless:true});
+  const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:1});
+  page=await context.newPage();
+  page.on('pageerror',error=>{errors.push(error.message);console.error('Browser error:',error.message);});
+  await page.goto(base+'/?qa=1');
+  await page.waitForFunction(()=>document.getElementById('transactionList')?.textContent.includes('No transactions yet'));
+  await page.waitForFunction(()=>!document.getElementById('startupSplash'));
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('finTx')).length),0);
+  assert.equal(await page.locator('#healthScore').textContent(),'—');
+  await page.evaluate(()=>openView('data'));
+  const input=page.locator('input[type=file]');
+  await input.setInputFiles({name:'invalid.csv',mimeType:'text/csv',buffer:Buffer.from('description,amount\nMissing date,500')});
+  await page.waitForFunction(()=>document.getElementById('importStatus')?.textContent.includes('CSV import stopped')||document.body.textContent.includes('CSV requires date'));
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('finTx')).length),0);
+  const rows=['date,description,amount,category'];
+  for(let month=4;month<=9;month++){
+    const p=`2026-${String(month).padStart(2,'0')}`;
+    rows.push(`${p}-01,Salary,60000,Income`,`${p}-02,Apartment rent,-18000,Housing`,`${p}-03,Loan EMI,-5000,Debt`,`${p}-15,Paid to Renuka,-500,Dining`);
+  }
+  await input.setInputFiles({name:'integration-test.csv',mimeType:'text/csv',buffer:Buffer.from(rows.join('\n'))});
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('finTx')||'[]').length===24);
+  await page.evaluate(()=>openView('data'));
+  assert.equal(await page.locator('#transactionList .transaction').count(),24);
+  await page.evaluate(()=>openFinancialUpdate());
+  await page.locator('#financialUpdateType').selectOption('debt');
+  await page.locator('#financialAmount').fill('20000');
+  await page.evaluate(()=>applyFinancialUpdate());
+  assert.equal(await page.evaluate(()=>model.profileVerified),false,'A debt-only update must not declare an unknown cash balance');
+  assert.equal(await page.evaluate(()=>model.financialHistory.totalDebt),20000,'Declared debt must still reach planning and analysis');
+  assert.ok((await page.evaluate(()=>payeeChartRows())).some(p=>p.name==='Renuka'));
+  await page.evaluate(()=>openView('insights'));
+  assert.ok((await page.locator('#insightList').textContent()).includes('Cash-gap probability'));
+  await page.evaluate(()=>showActions());
+  assert.ok((await page.locator('#sheetContent').textContent()).includes('Action center'));
+  await page.evaluate(()=>closeSheet());
+  await page.evaluate(()=>showActionPlanner());
+  assert.equal(await page.locator('.plan-table tbody tr').count(),6);
+  assert.ok(await page.locator('#sheetContent').textContent().then(t=>t.includes('Stability shield')));
+  await page.evaluate(()=>closeSheet());
+  await page.evaluate(()=>openView('ask'));
+  await page.locator('#chatInput').fill('What shop do I spend most at?');
+  await page.locator('#chatInput').press('Enter');
+  await page.waitForFunction(()=>document.querySelector('#messages .msg.bot:last-child')?.textContent.includes('Apartment rent'));
+  await page.evaluate(()=>openView('home'));
+  await page.locator('#languageSelect').selectOption('mr');
+  await page.waitForFunction(()=>document.documentElement.lang==='mr');
+  assert.match(await page.locator('#incomeMetric').textContent(),/[०-९]/);
+  await page.evaluate(()=>showHealthDimension('cashFlow'));
+  assert.match(await page.locator('#sheetContent').textContent(),/दरमहा/);
+  await page.evaluate(()=>closeSheet());
+  await page.evaluate(()=>showActionPlanner());
+  assert.match(await page.locator('.plan-table tbody td').first().textContent(),/[०-९]/);
+  await page.locator('#declaredReserve').fill('२००००');
+  await page.evaluate(()=>declarePlannerReserve('stable','auto'));
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('finPlannerAssumptions')).reserve),20000);
+  await page.evaluate(()=>closeSheet());
+  await page.locator('#languageSelect').selectOption('en');
+  await page.waitForFunction(()=>document.documentElement.lang==='en');
+  assert.match(await page.locator('#incomeMetric').textContent(),/[0-9]/);
+  const imported=await page.evaluate(()=>localStorage.getItem('finTx'));
+  await page.evaluate(()=>openView('data'));
+  await input.setInputFiles({name:'empty.csv',mimeType:'text/csv',buffer:Buffer.from('date,description,amount\n')});
+  await page.waitForTimeout(200);
+  assert.equal(await page.evaluate(()=>localStorage.getItem('finTx')),imported);
+  await page.reload();
+  await page.waitForFunction(()=>document.getElementById('transactionList')?.querySelectorAll('.transaction').length===24);
+  await page.waitForFunction(()=>!document.getElementById('startupSplash'));
+  await page.evaluate(()=>openView('home'));
+  fs.mkdirSync('build/reports',{recursive:true});
+  await page.screenshot({path:'build/reports/integrated-home.png',fullPage:true});
+  await page.locator('#languageSelect').selectOption('mr');
+  await page.screenshot({path:'build/reports/integrated-marathi.png',fullPage:true});
+  assert.deepEqual(errors,[]);
+  console.log('Verified browser flow: empty account, rejected CSV, real CSV import, P2 snapshot/chat facts, six-month planner, Marathi numbers/reserve input, reload and retained data.');
+}catch(error){console.error('Browser state:',await page?.locator('body').innerText().catch(()=>''));throw error;}finally{await browser?.close();server.kill();}

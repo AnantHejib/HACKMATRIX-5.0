@@ -11,3 +11,6 @@ node_modules/
 .env.local
 .env.*.local
 npm-debug.log*
+*.keystore
+*.jks
+app/src/main/assets/model.task

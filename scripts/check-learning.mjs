@@ -41,7 +41,7 @@ try {
 compiled.runInContext(context);
 
 const model = {
-  analysisVersion: '2.0', score: 70, safe: 5000, income90: 60000, expense90: 47000,
+  analysisVersion: '2.0', records: 120, score: 70, safe: 5000, income90: 60000, expense90: 47000,
   debtPressure: 35, runway: 1.5, dataQuality: { quality: 82 },
   prediction: { gapProbability: 24 },
   categoryMonthly: { Dining: 3000, Shopping: 2500, Subscriptions: 900, Other: 600 },

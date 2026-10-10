@@ -13,6 +13,8 @@
 
 FIN turns consented transaction and financial-history data into a consolidated health view, probabilistic cash-flow forecasts, explainable risk signals, and personalized conversations. The core experience works offline; a versioned server API can add structured AI explanations without putting a provider credential in the APK.
 
+Build 21 integrates P2's on-device Ask FIN engine and payee-based Spending Snapshot into P1. New users start with an empty account and import their own CSV/PDF; production no longer creates sample transactions or balances. See [integration details, tests and setup](docs/RELEASE_1.10.5.md#p1p2-integration--11-october-2026-build-21). The optional native AI model must be installed separately; cloud chat is an explicit sharing choice. The APK is a tested debug candidate, with the remaining production requirements documented there.
+
 <p align="center">
   <a href="https://github.com/AnantHejib/HACKMATRIX-5.0/releases/latest"><strong>Download the latest APK</strong></a>
   &nbsp;|&nbsp;
@@ -22,6 +24,8 @@ FIN turns consented transaction and financial-history data into a consolidated h
 </p>
 
 ## Product preview
+
+These historical preview images use development data; they are not the new-user state in the current app.
 
 <table>
   <tr>

@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      bundle_model:
+        description: "Bundle the optional P2 on-device model (approximately 550 MB)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -37,11 +42,17 @@ jobs:
   build:
     name: Build debug APK
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+
+      - name: Download the optional P2 on-device model
+        if: ${{ inputs.bundle_model }}
+        run: |
+          curl -L --fail --retry 5 --retry-delay 15 -o app/src/main/assets/model.task "https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct/resolve/main/Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task"
+          test "$(stat -c%s app/src/main/assets/model.task)" -gt 400000000
 
       - name: Set up Java
         uses: actions/setup-java@v6

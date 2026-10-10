@@ -5,8 +5,8 @@ FIN's conversational layer is a versioned Vercel Function. It explains the deter
 ## Runtime pipeline
 
 1. The Android app calculates facts, forecasts, recommendations, impact, and confidence locally.
-2. The client builds a bounded summary without transaction rows or merchant descriptions.
-3. `POST /api/v1/copilot` applies a strict Zod input contract and a 32 KiB body limit.
+2. The client defaults to on-device answers. Choosing cloud chat explicitly permits sharing a bounded financial summary, payee names, recent transaction details, question and conversation.
+3. `POST /api/v1/copilot` applies a strict Zod input contract and a 256 KiB body limit.
 4. The service retrieves a small set of relevant, curated RBI, MoSPI, and OGD guidance records.
 5. Vercel AI Gateway calls the environment-selected model and requires a structured response schema.
 6. Citation IDs are allowlisted against only the retrieved sources before the response is returned.
@@ -21,7 +21,7 @@ Financial answers contain the relevant subset of:
 - a before/after change explanation; and
 - allowlisted source metadata and an educational-use disclaimer.
 
-General conversation such as greetings does not require financial analysis sections. Questions that identify a top shop are answered on-device from the user's transaction descriptions; merchant names and transaction-level records are not sent to the model service.
+General conversation such as greetings does not require financial analysis sections. P2's on-device MediaPipe model receives verified facts and recent conversational context through `FinLlm`; model output is checked against supplied numbers. Its `.task` asset is optional and must be installed on a compatible Android phone. Cloud chat preserves the managed structured API and includes P2's bounded transaction context only after the user selects that mode.
 
 ## Configuration
 
@@ -42,9 +42,9 @@ npm ci
 npm run dev
 ```
 
-Open `http://localhost:3000`. The dev server serves the app and the two API routes from one origin, so the chat calls the configured model. Without `AI_GATEWAY_MODEL` and `AI_GATEWAY_API_KEY` in `.env.local`, the chat answers from the on-device engine instead.
+Open `http://localhost:3000`. The dev server serves the app and API routes from one origin. Select cloud chat in Settings to use the configured model. Without credentials, local calculated answers remain available; the native MediaPipe engine runs only inside Android after a model is installed.
 
-The request also carries `financialContext.categories` (ranked category averages) and `financialContext.plan` (the calculated monthly budget, daily and weekly allowances, and predicted bill and income dates labelled by category, never by merchant). The model uses these for "what do I spend most on" and schedule questions and returns schedule rows in `answer.schedule`.
+The request also carries `locale` (`en`, `hi`, `mr`), P2's ranked payee groups in `financialContext.categories`, the calculated budget in `financialContext.plan`, and exact daily/weekly/monthly totals plus bounded merchant and recent-payment arrays in `financialContext.transactions`. Calculated totals remain authoritative. The backend preserves the P2 transaction-query instructions, P1's structured response format, retrieved guidance and locale routing.
 
 ## Verify locally
 

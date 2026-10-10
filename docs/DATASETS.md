@@ -1,6 +1,6 @@
 # Dataset, grounding, and evaluation strategy
 
-FIN does not fine-tune a model on personal transactions or an arbitrary scraped dataset. The safer deployment design is deterministic financial calculation plus retrieval-grounded explanation: user-specific numbers stay under FIN's rule-based/statistical model, while the language model receives only the calculated summary and relevant curated guidance.
+FIN does not fine-tune a model on personal transactions or scraped data. Financial calculations remain local. The optional on-device model receives verified facts; cloud mode receives bounded summaries and payee/transaction context after the user chooses it. Synthetic histories are confined to development tests and evaluation scripts; production starts empty and never seeds transactions or financial balances.
 
 ## Curated official sources
 

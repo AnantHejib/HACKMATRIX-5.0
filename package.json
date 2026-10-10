@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "node scripts/dev-server.mjs",
+    "check:browser": "node scripts/check-browser.mjs",
     "test": "node --test",
     "check": "node scripts/check-api.mjs && node scripts/check-web.mjs && node scripts/check-evals.mjs && node scripts/check-learning.mjs && node scripts/check-statement-import.mjs && node scripts/check-release.mjs",
     "version:bump": "node scripts/bump-version.mjs"
@@ -15,5 +16,8 @@
   "dependencies": {
     "ai": "^6.0.0",
     "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.64.0"
   }
 }

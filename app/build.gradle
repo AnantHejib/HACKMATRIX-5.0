@@ -50,8 +50,20 @@ android {
     buildFeatures {
         buildConfig true
     }
+
+    androidResources {
+        noCompress 'task'
+    }
 }
 
 dependencies {
     implementation 'com.tom-roush:pdfbox-android:2.0.27.0'
+    implementation 'com.google.mediapipe:tasks-genai:0.10.27'
+}
+
+gradle.taskGraph.whenReady { graph ->
+    def signedReleaseRequested = graph.allTasks.any { task -> task.name in ['assembleRelease', 'bundleRelease', 'packageRelease'] }
+    if (signedReleaseRequested && !hasReleaseSigning) {
+        throw new GradleException('Release signing is not configured. Supply FIN_RELEASE_STORE_FILE, FIN_RELEASE_STORE_PASSWORD, FIN_RELEASE_KEY_ALIAS and FIN_RELEASE_KEY_PASSWORD using your private signing identity. Use assembleDebug for a test APK.')
+    }
 }

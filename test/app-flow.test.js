@@ -11,6 +11,7 @@ function app(){
   for(const file of ['forecast-reliability.js','financial-action-planner.js','fin-locale.js'])vm.runInContext(fs.readFileSync(new URL('../app/src/main/assets/'+file,import.meta.url),'utf8'),context);
   const source=html.match(/<script>\s*const INR=([\s\S]*?)<\/script>/)[1].replace(/if\(typeof window\.addEventListener[\s\S]*$/,'');
   vm.runInContext('const INR='+source+`;renderAll=()=>{};globalThis.flow={load(rows,profile){txs=rows;financialState=profile;localStorage.setItem('finLastImport',JSON.stringify({source:'csv-import',count:rows.length}));calculate();return model},update(row){beginFinancialChange('Test update');txs.push(row);calculate('transaction-update');return {model,change:getLastChange(),plan:FinActionPlanner.buildPlans(plannerInput())}},debt(value){beginFinancialChange('Debt corrected');financialState={...financialState,totalDebt:value};calculate('debt-update');return{model,change:getLastChange()}},plan(){return FinActionPlanner.buildPlans(plannerInput())},profile:defaultFinancialHistory,summary:()=>healthDimensionDetails(),payload:()=>buildCopilotPayload('What changed?')};`,context);
+  vm.runInContext(`Object.assign(flow,{bootstrap(){loadPersistentState();calculate();return model},records(){return txs},csv:validateCSVTransactions,ready(){localAi={state:'ready',available:true}},llm:localAiAnswer,safe:llmSafe,answer:personalizedAnswer});`,context);
   return {flow:context.flow,context,localStorage};
 }
 const rows=()=>Array.from({length:6},(_,i)=>[
@@ -89,4 +90,29 @@ test('Hindi and Marathi answers retain financial amounts and language survives r
     assert.notEqual(context.FinLocale.translate('Safe to spend'),'Safe to spend');
   }
   context.FinLocale.set('en');assert.equal(context.FinLocale.translate('Safe to spend'),'Safe to spend');
+});
+
+test('new users and migrated demo profiles start empty without fabricated balances',()=>{
+  const {flow,localStorage}=app();
+  let model=flow.bootstrap();assert.equal(model.records,0);assert.equal(model.financialHistory.cashBalance,0);assert.equal(model.profileVerified,false);
+  localStorage.setItem('finTx',JSON.stringify([{id:'TX001',date:'2026-09-01',description:'Campus placement stipend',amount:55000,category:'Income'}]));
+  localStorage.setItem('finFinancialHistory',JSON.stringify({cashBalance:23502,updatedAt:'Demo profile',history:[{assets:147000,debt:78000}]}));
+  model=flow.bootstrap();assert.equal(model.records,0);assert.equal(model.financialHistory.cashBalance,0);assert.equal(model.financialHistory.history.length,0);
+});
+
+test('CSV validation rejects missing columns, impossible dates and malformed amounts without mutating history',()=>{
+  const {flow}=app();flow.bootstrap();
+  for(const text of ['', 'description,amount\nUnknown,10', 'date,description,amount\n2026-02-31,Invalid,10','date,description,amount\n2026-10-10,Invalid,abc','date,description,amount\n"2026-10-10,Invalid,10'])assert.throws(()=>flow.csv(text));
+  assert.equal(flow.records().length,0);
+  const csv=flow.csv('date,description,amount\n2026-10-10,Renuka,-५००\n2026-10-10,Renuka,-५००');
+  assert.equal(csv.transactions.length,2);assert.equal(csv.transactions[0].amount,-500);
+});
+
+test('P2 native LLM callback receives verified facts, language and conversation without fabricated number acceptance',async()=>{
+  const {flow,context}=app();flow.load(rows(),profile());context.FinLocale.set('hi');let invocation;
+  context.window.FinLlm={generate(id,system,user){invocation={system,user};context.window.onLlmResult(id,'बचत ₹500 है।','');}};
+  flow.ready();const answer=await flow.llm('How much can I save?','Verified savings ₹500.');
+  assert.equal(answer,'बचत ₹500 है।');assert.match(invocation.system,/Hindi/);assert.match(invocation.user,/FACTS/);
+  assert.equal(flow.safe(answer,'Verified savings ₹500.',''),true);
+  assert.equal(flow.safe('Savings ₹50.','Verified savings ₹500.',''),false);
 });

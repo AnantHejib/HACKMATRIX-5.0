@@ -28,10 +28,7 @@ export async function POST(request) {
       return json(request, result, 200);
     }
 
-    if (url.pathname.endsWith('/config')) {
-      const result = updateAuthConfig(payload);
-      return json(request, { success: true, config: result }, 200);
-    }
+    if (url.pathname.endsWith('/config')) return json(request, { success: false, error: 'Configure delivery credentials on the server, not through the public API.' }, 403);
 
     return json(request, { error: 'UNKNOWN_AUTH_ACTION' }, 404);
   } catch (error) {

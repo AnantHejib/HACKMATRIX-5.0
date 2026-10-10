@@ -1,6 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sendOtp, verifyOtp, generateNumericOtp, getAuthConfig } from '../lib/auth-service.js';
+import { sendOtp, verifyOtp, generateNumericOtp, getAuthConfig, updateAuthConfig } from '../lib/auth-service.js';
+process.env.FIN_AUTH_DEV_MODE='true';
+
+test('public configuration cannot mutate credentials and production does not expose development OTPs',async()=>{
+  assert.throws(()=>updateAuthConfig({smtpPass:'must-not-be-written'}),error=>error.status===403);
+  const previous=process.env.VERCEL_ENV;
+  try{process.env.VERCEL_ENV='production';await assert.rejects(sendOtp({type:'email',target:'synthetic@example.com'}),error=>error.status===503);}
+  finally{if(previous===undefined)delete process.env.VERCEL_ENV;else process.env.VERCEL_ENV=previous;}
+});
 
 test('auth-service: generates 6-digit numeric OTP', () => {
   for (let i = 0; i < 20; i++) {
