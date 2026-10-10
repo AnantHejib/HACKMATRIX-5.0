@@ -12,7 +12,7 @@ FIN's conversational layer is a versioned Vercel Function. It explains the deter
 6. Citation IDs are allowlisted against only the retrieved sources before the response is returned.
 7. If any step fails, the Android app presents its on-device evidence-based answer.
 
-Every successful answer contains:
+Financial answers contain the relevant subset of:
 
 - a direct answer;
 - observed facts with evidence, confidence, and missing information;
@@ -20,6 +20,8 @@ Every successful answer contains:
 - recommendations with rationale, expected impact, timeframe, confidence, and assumptions;
 - a before/after change explanation; and
 - allowlisted source metadata and an educational-use disclaimer.
+
+General conversation such as greetings does not require financial analysis sections. Questions that identify a top shop are answered on-device from the user's transaction descriptions; merchant names and transaction-level records are not sent to the model service.
 
 ## Configuration
 
@@ -32,6 +34,17 @@ FIN_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 ```
 
 `AI_GATEWAY_MODEL` is configuration, not a hard-coded dependency. Vercel uses `VERCEL_OIDC_TOKEN` automatically when AI Gateway is enabled; `AI_GATEWAY_API_KEY` is the local-development fallback.
+
+## Run locally
+
+```bash
+npm ci
+npm run dev
+```
+
+Open `http://localhost:3000`. The dev server serves the app and the two API routes from one origin, so the chat calls the configured model. Without `AI_GATEWAY_MODEL` and `AI_GATEWAY_API_KEY` in `.env.local`, the chat answers from the on-device engine instead.
+
+The request also carries `financialContext.categories` (ranked category averages) and `financialContext.plan` (the calculated monthly budget, daily and weekly allowances, and predicted bill and income dates labelled by category, never by merchant). The model uses these for "what do I spend most on" and schedule questions and returns schedule rows in `answer.schedule`.
 
 ## Verify locally
 
