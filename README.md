@@ -6,7 +6,7 @@
 
 <p align="center">
   <img alt="Android 7+" src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?logo=android&logoColor=white">
-  <img alt="Version 1.10.5" src="https://img.shields.io/badge/version-1.10.5-6D5DFC">
+  <img alt="Version 1.10.6" src="https://img.shields.io/badge/version-1.10.6-6D5DFC">
   <img alt="Hackathon prototype" src="https://img.shields.io/badge/status-hackathon%20prototype-F4B942">
   <img alt="Local first" src="https://img.shields.io/badge/data-local--first-1F9D8A">
 </p>
