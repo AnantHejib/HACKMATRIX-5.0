@@ -66,7 +66,12 @@
     const backdrop=document.createElement('div');backdrop.className='portfolio-parallax';backdrop.setAttribute('aria-hidden','true');
     parallaxCoin=document.createElement('div');parallaxCoin.className='portfolio-background-coin';
     const source=hero?.querySelector('.fin-coin-stage');if(source)parallaxCoin.append(source.cloneNode(true));
-    parallaxOrb=document.createElement('div');parallaxOrb.className='portfolio-liquid-orb';backdrop.append(parallaxCoin,parallaxOrb);document.body.prepend(backdrop);
+    parallaxOrb=document.createElement('div');parallaxOrb.className='portfolio-liquid-orb';
+    const orbDrift=document.createElement('div');orbDrift.className='portfolio-orb-drift';orbDrift.append(parallaxOrb);
+    const glints=document.createElement('div');glints.className='portfolio-glints';glints.innerHTML='<i></i><i></i><i></i>';
+    backdrop.append(parallaxCoin,orbDrift,glints);document.body.prepend(backdrop);
+    const pauseBackground=()=>backdrop.classList.toggle('is-paused',document.hidden);
+    document.addEventListener('visibilitychange',pauseBackground);pauseBackground();
   }
   let scrollFrame=0;
   function updateScroll(){

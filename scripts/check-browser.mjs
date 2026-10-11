@@ -31,6 +31,8 @@ try{
   assert.ok(await page.locator('a[href="app.html"]').first().isVisible());
   assert.equal(await page.locator('.portfolio-gallery img').count(),4);
   assert.equal(await page.locator('.portfolio-card details').count(),9);
+  const coinPose=await page.locator('.portfolio-background-coin .fin-coin-tilt').evaluate(element=>getComputedStyle(element).transform);
+  await page.waitForFunction(previous=>getComputedStyle(document.querySelector('.portfolio-background-coin .fin-coin-tilt')).transform!==previous,coinPose);
   assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--ink').trim()),'#102c48');
   await page.locator('.portfolio-card summary').first().click();
   assert.equal(await page.locator('.portfolio-card details').first().getAttribute('open'),'');
