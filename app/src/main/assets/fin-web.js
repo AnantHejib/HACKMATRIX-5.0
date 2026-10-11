@@ -42,7 +42,7 @@
 (() => {
   document.body.classList.add('fin-web');
   const motion=matchMedia('(prefers-reduced-motion: reduce)');
-  const hero=document.querySelector('#view-home .hero');
+  const hero=document.querySelector('#view-home .hero,[data-coin-hero]');
   if(hero){
     const scene=document.createElement('div');scene.className='fin-coin-stage';scene.setAttribute('aria-hidden','true');scene.dataset.rawValue='true';
     scene.innerHTML=`<div class="fin-coin-halo"></div><div class="fin-coin-tilt"><div class="fin-coin-spin">${Array.from({length:19},(_,i)=>`<span class="fin-coin-edge" style="--depth:${i-9}px"></span>`).join('')}<div class="fin-coin-face fin-coin-front"><span class="fin-coin-caption">FINANCIAL CLARITY</span><strong>$</strong><span class="fin-coin-caption">FIN · YOUR FUTURE</span></div><div class="fin-coin-face fin-coin-back"><span class="fin-coin-caption">BUILD YOUR RESERVE</span><strong>FIN</strong><span class="fin-coin-caption">ONE STEP AT A TIME</span></div></div></div><div class="fin-coin-shadow"></div>`;
@@ -77,7 +77,7 @@
     }
   },{threshold:.08});
   function discover(){
-    document.querySelectorAll('.view.active .card,.view.active .metric,.view.active .hero,body>main .card').forEach(element=>{if(!seen.has(element)){seen.add(element);reveals.observe(element);}});
+    document.querySelectorAll('.view.active .card,.view.active .metric,.view.active .hero,body>main .card,.portfolio-card,.portfolio-gallery figure,.portfolio-step').forEach(element=>{if(!seen.has(element)){seen.add(element);reveals.observe(element);}});
     updateScroll();
   }
   let discoveryFrame=0;

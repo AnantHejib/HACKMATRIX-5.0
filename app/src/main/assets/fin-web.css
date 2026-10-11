@@ -1,14 +1,15 @@
 /* Applied by the web build; the Android layout keeps its existing styling. */
+.fin-web #app,.fin-web .bottomnav{max-width:none;width:100%}
 @media(min-width:900px){
-  #app{max-width:1120px;width:100%;padding-bottom:108px;box-shadow:0 0 70px rgba(38,75,125,.08)}
-  .topbar{padding-inline:36px}
-  .content{padding:20px 36px 32px}
+  #app{max-width:none;width:100%;padding-bottom:108px}
+  .topbar{padding-inline:clamp(24px,4vw,80px)}
+  .content{padding:20px clamp(24px,4vw,80px) 32px}
   .metrics{gap:18px}.metric{padding:22px}.metric strong{font-size:24px}
   .hero{padding:30px}.hero h3{font-size:25px}
   .position-grid,.health-reasoning-grid{gap:20px}
   .card{padding:24px}.quick button{font-size:13px}
-  .bottomnav{max-width:1120px;height:82px}.navbtn{font-size:12px}
-  .sheet{max-width:1000px;padding:30px;max-height:88vh}
+  .bottomnav{max-width:none;height:82px}.navbtn{font-size:12px}
+  .sheet{max-width:min(1400px,94vw);padding:30px;max-height:88vh}
   .overlay{align-items:center}.overlay .sheet{border-radius:26px}
   .onboard .sheet{max-width:700px;border-radius:0}
   .chat-shell{height:calc(100dvh - 250px)}

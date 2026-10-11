@@ -69,7 +69,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     if (req.method === 'GET' && staticAssets.has(url.pathname)) {
-      const extension=path.extname(url.pathname),type={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.wasm':'application/wasm'}[extension]||'application/octet-stream';
+      const extension=path.extname(url.pathname),type={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.wasm':'application/wasm','.png':'image/png'}[extension]||'application/octet-stream';
       res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-store' });
       res.end(fs.readFileSync(staticAssets.get(url.pathname)));
       return;

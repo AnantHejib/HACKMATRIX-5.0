@@ -27,6 +27,19 @@ try{
     await route.fulfill({status:response.status,headers:Object.fromEntries(response.headers),body:await response.text()});
   });
   await page.goto(base+'/?qa=1');
+  assert.equal(await page.locator('h1').textContent(),'Make room for a better financial future.');
+  assert.ok(await page.locator('a[href="app.html"]').first().isVisible());
+  assert.equal(await page.locator('.portfolio-gallery img').count(),4);
+  fs.mkdirSync('build/reports',{recursive:true});
+  await page.setViewportSize({width:1440,height:1000});
+  await page.locator('.portfolio-gallery').scrollIntoViewIfNeeded();
+  await page.locator('.portfolio-gallery img').evaluateAll(images=>Promise.all(images.map(image=>image.decode())));
+  await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));
+  await page.screenshot({path:'build/reports/web-portfolio.png',fullPage:true});
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  await page.setViewportSize({width:390,height:844});
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,JSON.stringify(await page.evaluate(()=>[...document.querySelectorAll('main *')].filter(element=>element.getBoundingClientRect().right>innerWidth).slice(0,8).map(element=>({class:element.className,width:element.getBoundingClientRect().width})))));
+  await page.locator('a[href="app.html"]').first().click();
   await page.waitForURL('**/login.html');
   assert.equal(await page.locator('#title').textContent(),'Sign in');
   await page.locator('#switchCopy a').click();
@@ -42,7 +55,7 @@ try{
   assert.equal(await page.evaluate(()=>sessionStorage.getItem('finAuthToken')),null);
   await page.locator('#password').fill('Test-only-password-483!');
   await page.locator('#submitButton').click();
-  await page.waitForURL('**/index.html');
+  await page.waitForURL('**/app.html');
   await page.waitForFunction(()=>isEmailVerified===true);
   await page.locator('#consentBox').check();
   await page.locator('#onboarding button').click();
@@ -120,7 +133,7 @@ try{
   fs.mkdirSync('build/reports',{recursive:true});
   await page.screenshot({path:'build/reports/integrated-home.png',fullPage:true});
   await page.setViewportSize({width:1440,height:1000});
-  assert.equal(await page.locator('#app').evaluate(element=>Math.round(element.getBoundingClientRect().width)),1120);
+  assert.equal(await page.locator('#app').evaluate(element=>Math.round(element.getBoundingClientRect().width)),1440);
   await page.screenshot({path:'build/reports/web-desktop.png',fullPage:true});
   await page.setViewportSize({width:390,height:844});
   await page.locator('#languageSelect').selectOption('mr');
