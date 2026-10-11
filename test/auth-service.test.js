@@ -9,13 +9,25 @@ import nodemailer from 'nodemailer';
 function fixture(delivery) {
   const db={user:[],session:[],account:[],verification:[],rateLimit:[]},outbox=[];
   const auth=createFINAuth({database:memoryAdapter(db),secret:'synthetic-test-secret-never-used-in-production-123',baseURL:'http://localhost:3000',deliver:delivery||(async message=>{outbox.push(message)})});
-  const call=async(action,body,token)=>{
-    const req=new Request('http://localhost:3000/api/v1/auth/'+action,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:body===undefined?undefined:JSON.stringify(body)});
+  const call=async(action,body,token,extraHeaders={})=>{
+    const req=new Request('http://localhost:3000/api/v1/auth/'+action,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{}),...extraHeaders},body:body===undefined?undefined:JSON.stringify(body)});
     const response=await handleAuth(req,auth);return{status:response.status,data:await response.json()};
   };
   return{db,outbox,call};
 }
 const target='synthetic@example.com',payload={type:'email',target};
+test('Android null-origin JSON signup and sign-in work with Fetch Metadata; forms and untrusted web origins fail',async()=>{
+  const {call}=fixture(),account={email:target,phone:'9876543210',password:'Test-only-password-483!'};
+  const native={Origin:'null','Sec-Fetch-Site':'cross-site','Sec-Fetch-Mode':'cors','Sec-Fetch-Dest':'empty'};
+  assert.equal((await call('signup',account,undefined,{...native,'Sec-Fetch-Mode':'navigate','Sec-Fetch-Dest':'document'})).status,403);
+  assert.equal((await call('signup',account,undefined,{...native,'Content-Type':'text/plain'})).status,403);
+  assert.equal((await call('signup',account,undefined,{...native,Origin:'https://untrusted.example'})).status,403);
+  assert.equal((await call('signup',account,undefined,native)).status,200);
+  const signed=await call('signin',account,undefined,native);
+  assert.equal(signed.status,200);assert.ok(signed.data.token);
+  assert.equal((await call('session',undefined,signed.data.token,native)).status,200);
+  assert.equal((await call('logout',{},signed.data.token,native)).status,200);
+});
 test('mobile/password registration stores hashes, rejects incorrect passwords, duplicates and invalid numbers',async()=>{
   const {db,call}=fixture(),account={email:target,phone:'9876543210',password:'Test-only-password-483!'};
   assert.equal((await call('signup',account)).status,200);

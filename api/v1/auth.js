@@ -40,9 +40,15 @@ export async function handleAuth(request, authOverride) {
     url.search='';
     const headers = new Headers(request.headers);
     headers.delete('cookie'); headers.delete('content-length');
-    // Native file:// WebViews send Origin: null; they use explicit bearer tokens,
-    // not ambient cookies. Other origins still undergo framework validation.
-    if(headers.get('origin')==='null')headers.delete('origin');
+    // Adapt the native file:// JSON request to a cookie-free server request.
+    // Removing Origin alone leaves Fetch Metadata behind, which makes Better
+    // Auth require the missing origin again. Never adapt browser navigation/forms.
+    if(headers.get('origin')==='null'){
+      const mode=headers.get('sec-fetch-mode'),dest=headers.get('sec-fetch-dest');
+      if(request.method==='POST' && ((request.headers.get('content-type')||'').split(';')[0].trim().toLowerCase()!=='application/json' || (mode&&mode!=='cors'&&mode!=='same-origin') || (dest&&dest!=='empty')))
+        return json(request,{error:'Unsupported authentication request.'},403);
+      for(const name of ['origin','referer','sec-fetch-site','sec-fetch-mode','sec-fetch-dest','sec-fetch-user'])headers.delete(name);
+    }
     headers.set('content-type', 'application/json');
     const {response,deliveryFailed} = await runAuthRequest(()=>auth.handler(new Request(url, { method: request.method, headers, body: body ? JSON.stringify(body) : undefined })));
     if(deliveryFailed)return json(request,{error:'Email delivery failed. Please try again later.'},503);
