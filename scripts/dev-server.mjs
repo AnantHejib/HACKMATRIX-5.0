@@ -1,5 +1,8 @@
 import fs from 'node:fs';
 import http from 'node:http';
+import path from 'node:path';
+import { buildWeb } from './build-web.mjs';
+if(process.argv.includes('--web'))process.env.FIN_WEB='1';
 
 for (const name of ['.env.local', '.env']) {
   const path = new URL(`../${name}`, import.meta.url);
@@ -11,7 +14,8 @@ const { POST: copilot, OPTIONS: copilotOptions } = await import('../api/v1/copil
 const { POST: authPost, OPTIONS: authOptions, GET: authGet } = await import('../api/v1/auth.js');
 
 const port = Number(process.env.PORT) || 3000;
-const page = new URL('../app/src/main/assets/index.html', import.meta.url);
+if(process.env.FIN_WEB==='1')buildWeb();
+const page = new URL(process.env.FIN_WEB==='1'?'../build/web/index.html':'../app/src/main/assets/index.html', import.meta.url);
 const staticAssets = new Map([
   ['/login.html', new URL('../app/src/main/assets/login.html', import.meta.url)],
   ['/login.js', new URL('../app/src/main/assets/login.js', import.meta.url)],
@@ -20,6 +24,13 @@ const staticAssets = new Map([
   ['/forecast-reliability.js', new URL('../app/src/main/assets/forecast-reliability.js', import.meta.url)],
   ['/financial-action-planner.js', new URL('../app/src/main/assets/financial-action-planner.js', import.meta.url)],
 ]);
+if(process.env.FIN_WEB==='1'){
+  const directory=path.resolve(import.meta.dirname,'../build/web');
+  for(const relative of fs.readdirSync(directory,{recursive:true})){
+    const filename=path.join(directory,relative);
+    if(fs.statSync(filename).isFile())staticAssets.set('/'+relative.split(path.sep).join('/'),filename);
+  }
+}
 const routes = {
   'POST /api/v1/auth/signup': authPost,
   'OPTIONS /api/v1/auth/signup': authOptions,
@@ -58,7 +69,8 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     if (req.method === 'GET' && staticAssets.has(url.pathname)) {
-      res.writeHead(200, { 'Content-Type': url.pathname.endsWith('.html')?'text/html; charset=utf-8':'text/javascript; charset=utf-8', 'Cache-Control': 'no-store' });
+      const extension=path.extname(url.pathname),type={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.wasm':'application/wasm'}[extension]||'application/octet-stream';
+      res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-store' });
       res.end(fs.readFileSync(staticAssets.get(url.pathname)));
       return;
     }

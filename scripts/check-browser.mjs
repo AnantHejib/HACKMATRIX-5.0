@@ -8,7 +8,7 @@ import { handleAuth } from '../api/v1/auth.js';
 
 // Development verification only. Synthetic rows enter through the actual CSV input.
 const port=3111,base=`http://127.0.0.1:${port}`;
-const server=spawn(process.execPath,['scripts/dev-server.mjs'],{env:{...process.env,PORT:String(port)},stdio:'pipe'});
+const server=spawn(process.execPath,['scripts/dev-server.mjs'],{env:{...process.env,PORT:String(port),FIN_WEB:'1'},stdio:'pipe'});
 let browser;
 let page;
 const errors=[];
@@ -50,6 +50,15 @@ try{
   assert.equal(await page.locator('#healthScore').textContent(),'—');
   await page.evaluate(()=>openView('data'));
   const input=page.locator('input[type=file]');
+  // A real PDF byte stream exercises PDF.js extraction and the shared parser.
+  const stream='BT /F1 12 Tf 50 760 Td (Synthetic bank statement) Tj 0 -24 Td (Date Description Debit Credit Balance) Tj 0 -24 Td (01/09/2026 Salary 0.00 60000.00 60000.00) Tj 0 -24 Td (02/09/2026 Rent 18000.00 0.00 42000.00) Tj ET';
+  const objects=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>','<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`];
+  let pdf='%PDF-1.4\n',offsets=[0];objects.forEach((object,i)=>{offsets.push(pdf.length);pdf+=`${i+1} 0 obj\n${object}\nendobj\n`;});
+  const xref=pdf.length;pdf+=`xref\n0 6\n0000000000 65535 f \n${offsets.slice(1).map(offset=>String(offset).padStart(10,'0')+' 00000 n ').join('\n')}\ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  await input.setInputFiles({name:'synthetic-statement.pdf',mimeType:'application/pdf',buffer:Buffer.from(pdf)});
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('finTx')||'[]').length===2);
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('finTx')).find(t=>t.description.includes('Salary')).amount),60000);
+  await page.evaluate(()=>{localStorage.setItem('finTx','[]');txs=[];calculate('browser-pdf-test-reset');});
   await input.setInputFiles({name:'invalid.csv',mimeType:'text/csv',buffer:Buffer.from('description,amount\nMissing date,500')});
   await page.waitForFunction(()=>document.getElementById('importStatus')?.textContent.includes('CSV import stopped')||document.body.textContent.includes('CSV requires date'));
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('finTx')).length),0);
@@ -110,6 +119,10 @@ try{
   await page.evaluate(()=>openView('home'));
   fs.mkdirSync('build/reports',{recursive:true});
   await page.screenshot({path:'build/reports/integrated-home.png',fullPage:true});
+  await page.setViewportSize({width:1440,height:1000});
+  assert.equal(await page.locator('#app').evaluate(element=>Math.round(element.getBoundingClientRect().width)),1120);
+  await page.screenshot({path:'build/reports/web-desktop.png',fullPage:true});
+  await page.setViewportSize({width:390,height:844});
   await page.locator('#languageSelect').selectOption('mr');
   await page.screenshot({path:'build/reports/integrated-marathi.png',fullPage:true});
   await page.evaluate(()=>{void logout()});

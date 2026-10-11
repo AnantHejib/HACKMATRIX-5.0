@@ -13,6 +13,10 @@
 
 FIN turns consented transaction and financial-history data into a consolidated health view, probabilistic cash-flow forecasts, explainable risk signals, and personalized conversations. The core experience works offline; a versioned server API can add structured AI explanations without putting a provider credential in the APK.
 
+The browser version is available at [FIN Web](https://fin-auth-gilt.vercel.app). Sign in with the same mobile number and password used in the Android app. Financial records remain in this browser's local storage and do not automatically sync with Android. The web build includes local CSV and text-based PDF import, password-protected PDF extraction, the health dashboard, insights, action comparisons, six-month planning and English/Hindi/Marathi display. Scanned image PDFs require OCR and are not supported.
+
+Run `npm run dev:web` for the local browser app at `http://localhost:3000` (authentication requires configured server environment variables). Run `npm run build:web` to generate static assets in `build/web`. `npm run auth:stage` prepares the shared web frontend and existing authentication backend for the linked Vercel project. The auth deployment includes local guidance; a separately configured AI backend is needed for cloud model responses.
+
 Build 21 integrates P2's on-device Ask FIN engine and payee-based Spending Snapshot into P1. New users start with an empty account and import their own CSV/PDF; production no longer creates sample transactions or balances. See [integration details, tests and setup](docs/RELEASE_1.10.5.md#p1p2-integration--11-october-2026-build-21). The optional native AI model must be installed separately; cloud chat is an explicit sharing choice. The APK is a tested debug candidate, with the remaining production requirements documented there.
 
 <p align="center">
