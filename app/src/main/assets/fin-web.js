@@ -38,6 +38,56 @@
   };
 })();
 
+// Public, disposable demonstration using the same planner as the signed-in app.
+(() => {
+  const section=document.getElementById('simulation');if(!section)return;
+  const defaults={income:60000,essential:28000,discretionary:10000,debt:5000,cash:45000,reserve:30000,savings:4000,variability:10};
+  const money=new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0});
+  const percent=value=>`${Math.round(value*100)}%`;
+  const descriptions={stable:'Stable income: the sample income and declared variability continue across six months.', 'income-reduction':'Income reduction: monthly income falls by 30% from month 2. Variability remains at the declared sample scale.', 'essential-shock':'Unexpected expense: an additional ₹25,000 essential expense occurs in month 2.',infeasible:'Infeasible stress test: income falls by 40% from month 2 and a ₹25,000 essential expense occurs in month 2.'};
+  let scenario='stable',selectedId=null,result=null,frame=0;
+  function input(){
+    const values=Object.fromEntries(Object.keys(defaults).map(key=>[key,Number(document.getElementById(`sim-${key}`).value)]));
+    return {startingCash:values.cash,monthlyIncome:values.income,essentialExpenses:values.essential,debtMinimum:values.debt,discretionaryBaseline:values.discretionary,minimumReserve:values.reserve,monthlySavingsGoal:values.savings,incomeSd:values.income*values.variability/100,essentialSd:values.essential*.1,totalDebt:180000,scenario,shockAmount:25000,paths:500,historyProfile:{months:0,transactionCount:0,reliabilityLabel:'synthetic assumptions; no imported history'}};
+  }
+  const baseline=FinActionPlanner.buildPlans(input()),initial=baseline.sequences[0];
+  function chart(plan,reserve){
+    const values=plan.uncertainty.ranges.flatMap(range=>[range.p10,range.p90]).concat(plan.periods.map(period=>period.closing),[reserve,0]);
+    const low=Math.min(...values),high=Math.max(...values),span=Math.max(1,high-low),y=value=>240-(value-low)/span*195,x=index=>65+index*120;
+    const path=plan.periods.map((period,index)=>`${index?'L':'M'}${x(index)},${y(period.closing).toFixed(1)}`).join(' ');
+    const band=plan.uncertainty.ranges.map((range,index)=>`${x(index)},${y(range.p90).toFixed(1)}`).concat([...plan.uncertainty.ranges].reverse().map((range,index)=>`${x(5-index)},${y(range.p10).toFixed(1)}`)).join(' ');
+    const grid=[0,.5,1].map(t=>{const value=low+t*span,position=y(value);return `<line x1="65" y1="${position}" x2="665" y2="${position}" stroke="#d9e7ee"/><text x="55" y="${position+4}" text-anchor="end">₹${Math.round(value/1000)}k</text>`;}).join('');
+    document.getElementById('sim-chart').innerHTML=`<title>${plan.name}: expected cash, P10–P90 simulated range and reserve</title><text x="65" y="23">Expected cash · shaded P10–P90 range · dashed reserve</text>${grid}<polygon points="${band}" fill="#087f8318"/><line class="chart-reserve" x1="65" x2="665" y1="${y(reserve)}" y2="${y(reserve)}"/><path class="chart-path" d="${path}"/>${plan.periods.map((period,index)=>`<circle cx="${x(index)}" cy="${y(period.closing)}" r="4" fill="#087f83"/><text x="${x(index)}" y="265" text-anchor="middle">Month ${index+1}</text>`).join('')}`;
+  }
+  function render(){
+    frame=0;const assumptions=input();result=FinActionPlanner.buildPlans(assumptions);
+    const selected=result.sequences.find(plan=>plan.id===selectedId)||result.sequences[0];selectedId=selected.id;
+    for(const key of Object.keys(defaults))document.getElementById(`sim-${key}-value`).textContent=key==='variability'?`${document.getElementById('sim-variability').value}%`:money.format(Number(document.getElementById(`sim-${key}`).value));
+    document.getElementById('sim-headroom').textContent=money.format(assumptions.monthlyIncome-assumptions.essentialExpenses-assumptions.debtMinimum-assumptions.discretionaryBaseline);
+    document.getElementById('sim-preferred').textContent=result.sequences[0].name;
+    document.getElementById('sim-closing').textContent=money.format(selected.periods.at(-1).closing);
+    document.getElementById('sim-scenario-description').textContent=descriptions[scenario]+' Baseline headroom excludes savings and extra debt payments.';
+    document.getElementById('sim-plans').innerHTML=result.sequences.map(plan=>`<button type="button" data-sim-plan="${plan.id}" aria-pressed="${plan.id===selectedId}"><em>${plan.id===result.recommendedId?'PREFERRED STRATEGY':'ALTERNATIVE STRATEGY'}</em><strong>${plan.name}</strong><span>Reserve-shortfall simulation: ${percent(plan.uncertainty.shortfallRisk)}</span><span>Six-month saving: ${money.format(plan.totals.saved)}</span><span>Extra debt repaid: ${money.format(plan.totals.extraDebt)}</span></button>`).join('');
+    document.getElementById('sim-reason').textContent=result.recommendationReason;
+    document.getElementById('sim-table-caption').textContent=selected.name+' · six monthly periods';
+    document.getElementById('sim-periods').innerHTML=selected.periods.map((period,index)=>`<tr><th scope="row">${period.period}</th>${['income','essential','debtMinimum','discretionary','savings','extraDebt','closing'].map(key=>`<td>${money.format(period[key])}</td>`).join('')}<td>${money.format(selected.uncertainty.ranges[index].p10)} – ${money.format(selected.uncertainty.ranges[index].p90)}</td></tr>`).join('');
+    const preferred=result.sequences[0];
+    document.getElementById('sim-change').textContent=`Compared with the initial synthetic sample: preferred strategy ${initial.name} → ${preferred.name}; preferred plan's month-6 cash ${money.format(initial.periods.at(-1).closing)} → ${money.format(preferred.periods.at(-1).closing)}; simulated reserve-shortfall risk ${percent(initial.uncertainty.shortfallRisk)} → ${percent(preferred.uncertainty.shortfallRisk)}.`;
+    const conflict=document.getElementById('sim-conflicts');
+    if(selected.feasibility.infeasible){conflict.innerHTML=`<strong>Some goals or constraints remain unmet</strong><ul>${selected.feasibility.conflicts.slice(0,6).map(text=>`<li>${text}</li>`).join('')}</ul><strong>Proposed relaxation</strong><ul>${selected.feasibility.proposals.map(text=>`<li>${text}</li>`).join('')}</ul>`;}else{conflict.textContent='The selected expected plan meets the declared reserve and savings goals in all six periods. Simulated outcomes can still fall below the reserve.';}
+    chart(selected,assumptions.minimumReserve);
+    section.querySelectorAll('[data-sim-scenario]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.simScenario===scenario)));
+  }
+  section.addEventListener('input',event=>{if(event.target.matches('input[type="range"]')){selectedId=null;if(!frame)frame=requestAnimationFrame(render);}});
+  section.addEventListener('click',event=>{
+    const preset=event.target.closest('[data-sim-scenario]'),plan=event.target.closest('[data-sim-plan]');
+    if(preset){scenario=preset.dataset.simScenario;selectedId=null;render();}
+    else if(plan){selectedId=plan.dataset.simPlan;render();}
+    else if(event.target.closest('#sim-reset')){for(const [key,value] of Object.entries(defaults))document.getElementById(`sim-${key}`).value=value;scenario='stable';selectedId=null;render();}
+  });
+  render();
+})();
+
 // Small transform/opacity animations keep scrolling and financial updates responsive.
 (() => {
   document.body.classList.add('fin-web');
