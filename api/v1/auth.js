@@ -43,7 +43,7 @@ export async function handleAuth(request, authOverride) {
     // Adapt the native file:// JSON request to a cookie-free server request.
     // Removing Origin alone leaves Fetch Metadata behind, which makes Better
     // Auth require the missing origin again. Never adapt browser navigation/forms.
-    if(headers.get('origin')==='null'){
+    if(!headers.get('origin') || headers.get('origin')==='null'){
       const mode=headers.get('sec-fetch-mode'),dest=headers.get('sec-fetch-dest');
       if(request.method==='POST' && ((request.headers.get('content-type')||'').split(';')[0].trim().toLowerCase()!=='application/json' || (mode&&mode!=='cors'&&mode!=='same-origin') || (dest&&dest!=='empty')))
         return json(request,{error:'Unsupported authentication request.'},403);

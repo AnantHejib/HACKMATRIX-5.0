@@ -27,6 +27,9 @@ test('Android null-origin JSON signup and sign-in work with Fetch Metadata; form
   assert.equal(signed.status,200);assert.ok(signed.data.token);
   assert.equal((await call('session',undefined,signed.data.token,native)).status,200);
   assert.equal((await call('logout',{},signed.data.token,native)).status,200);
+  const other={email:'no-origin@example.com',phone:'9876543211',password:'Test-only-password-483!'};
+  assert.equal((await call('signup',other)).status,200,'Android may omit Origin entirely');
+  assert.equal((await call('signin',other)).status,200);
 });
 test('mobile/password registration stores hashes, rejects incorrect passwords, duplicates and invalid numbers',async()=>{
   const {db,call}=fixture(),account={email:target,phone:'9876543210',password:'Test-only-password-483!'};
