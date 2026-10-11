@@ -37,3 +37,45 @@
     }
   };
 })();
+
+// Small transform/opacity animations keep scrolling and financial updates responsive.
+(() => {
+  document.body.classList.add('fin-web');
+  const motion=matchMedia('(prefers-reduced-motion: reduce)');
+  const ambient=document.createElement('div');ambient.className='fin-web-ambient';ambient.setAttribute('aria-hidden','true');ambient.innerHTML='<i></i><i></i>';document.body.prepend(ambient);
+  const progress=document.createElement('div');progress.className='fin-web-progress';progress.setAttribute('aria-hidden','true');document.body.append(progress);
+  let scrollFrame=0;
+  function updateScroll(){scrollFrame=0;const maximum=document.documentElement.scrollHeight-innerHeight;progress.style.transform=`scaleX(${maximum>0?Math.min(1,scrollY/maximum):0})`;}
+  addEventListener('scroll',()=>{if(!scrollFrame)scrollFrame=requestAnimationFrame(updateScroll);},{passive:true});
+  addEventListener('resize',updateScroll);updateScroll();
+  const seen=new WeakSet(),animations=new Set();
+  function animate(element,keyframes,options){
+    if(motion.matches||document.hidden)return;
+    const animation=element.animate(keyframes,options);animations.add(animation);animation.finished.catch(()=>{}).finally(()=>animations.delete(animation));
+  }
+  const reveals=new IntersectionObserver(entries=>{
+    let index=0;
+    for(const entry of entries){if(!entry.isIntersecting)continue;reveals.unobserve(entry.target);
+      animate(entry.target,[{opacity:.35,transform:'translateY(14px)'},{opacity:1,transform:'translateY(0)'}],{duration:420,delay:Math.min(index++*35,140),easing:'cubic-bezier(.22,1,.36,1)'});
+    }
+  },{threshold:.08});
+  function discover(){
+    document.querySelectorAll('.view.active .card,.view.active .metric,.view.active .hero,body>main .card').forEach(element=>{if(!seen.has(element)){seen.add(element);reveals.observe(element);}});
+    updateScroll();
+  }
+  let discoveryFrame=0;
+  const observer=new MutationObserver(records=>{
+    for(const record of records){if(record.type==='attributes'&&record.target.matches('.view.active'))animate(record.target,[{opacity:.4,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}],{duration:260,easing:'ease-out'});}
+    if(!discoveryFrame)discoveryFrame=requestAnimationFrame(()=>{discoveryFrame=0;discover();});
+  });
+  const app=document.getElementById('app');if(app)observer.observe(app,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+  const sheet=document.getElementById('sheetContent');
+  if(sheet)new MutationObserver(()=>{animate(sheet,[{opacity:.6,transform:'translateY(12px)'},{opacity:1,transform:'translateY(0)'}],{duration:240,easing:'ease-out'});}).observe(sheet,{childList:true});
+  document.addEventListener('pointerdown',event=>{
+    if(motion.matches)return;const button=event.target.closest('button');if(!button||button.disabled)return;
+    const bounds=button.getBoundingClientRect(),ripple=document.createElement('span');ripple.className='fin-web-ripple';ripple.setAttribute('aria-hidden','true');ripple.style.left=`${event.clientX-bounds.left}px`;ripple.style.top=`${event.clientY-bounds.top}px`;button.append(ripple);ripple.addEventListener('animationend',()=>ripple.remove(),{once:true});
+  });
+  motion.addEventListener('change',()=>{if(motion.matches){for(const animation of animations)animation.cancel();document.querySelectorAll('.fin-web-ripple').forEach(element=>element.remove());}});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)for(const animation of animations)animation.cancel();});
+  discover();
+})();
