@@ -42,6 +42,23 @@
 (() => {
   document.body.classList.add('fin-web');
   const motion=matchMedia('(prefers-reduced-motion: reduce)');
+  const hero=document.querySelector('#view-home .hero');
+  if(hero){
+    const scene=document.createElement('div');scene.className='fin-coin-stage';scene.setAttribute('aria-hidden','true');scene.dataset.rawValue='true';
+    scene.innerHTML=`<div class="fin-coin-halo"></div><div class="fin-coin-tilt"><div class="fin-coin-spin">${Array.from({length:19},(_,i)=>`<span class="fin-coin-edge" style="--depth:${i-9}px"></span>`).join('')}<div class="fin-coin-face fin-coin-front"><span class="fin-coin-caption">FINANCIAL CLARITY</span><strong>$</strong><span class="fin-coin-caption">FIN · YOUR FUTURE</span></div><div class="fin-coin-face fin-coin-back"><span class="fin-coin-caption">BUILD YOUR RESERVE</span><strong>FIN</strong><span class="fin-coin-caption">ONE STEP AT A TIME</span></div></div></div><div class="fin-coin-shadow"></div>`;
+    hero.classList.add('has-fin-coin');hero.append(scene);
+    let frame=0,pointerX=0,pointerY=0;
+    hero.addEventListener('pointermove',event=>{
+      if(motion.matches||event.pointerType!=='mouse')return;
+      const bounds=hero.getBoundingClientRect();pointerX=(event.clientX-bounds.left)/bounds.width-.5;pointerY=(event.clientY-bounds.top)/bounds.height-.5;
+      if(!frame)frame=requestAnimationFrame(()=>{frame=0;scene.style.setProperty('--tilt-x',`${-pointerY*18}deg`);scene.style.setProperty('--tilt-y',`${pointerX*22}deg`);});
+    },{passive:true});
+    hero.addEventListener('pointerleave',()=>{if(frame)cancelAnimationFrame(frame);frame=0;scene.style.setProperty('--tilt-x','0deg');scene.style.setProperty('--tilt-y','0deg');});
+    let visible=false;
+    const pause=()=>scene.classList.toggle('is-paused',!visible||document.hidden);
+    new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;pause();},{threshold:.05}).observe(scene);
+    document.addEventListener('visibilitychange',pause);
+  }
   const ambient=document.createElement('div');ambient.className='fin-web-ambient';ambient.setAttribute('aria-hidden','true');ambient.innerHTML='<i></i><i></i>';document.body.prepend(ambient);
   const progress=document.createElement('div');progress.className='fin-web-progress';progress.setAttribute('aria-hidden','true');document.body.append(progress);
   let scrollFrame=0;
