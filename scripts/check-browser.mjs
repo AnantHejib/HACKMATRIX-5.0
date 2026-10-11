@@ -26,6 +26,16 @@ try{
     const response=await handleAuth(new Request(r.url(),{method:r.method(),headers,body:r.method()==='POST'?r.postData():undefined}),auth);
     await route.fulfill({status:response.status,headers:Object.fromEntries(response.headers),body:await response.text()});
   });
+  let cloudCalls=0,failCloud=false;
+  await page.route('**/api/health',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({status:'ready'})}));
+  await page.route('**/api/v1/copilot',async route=>{
+    const r=route.request();
+    if(failCloud){await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({message:'Synthetic service failure'})});return;}
+    const payload=JSON.parse(r.postData());cloudCalls++;
+    assert.match(r.headers().authorization,/^Bearer /);
+    assert.equal(payload.financialContext.observed.recordCount,24);
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({answer:{directAnswer:'Cloud verified: imported transaction context received.',sourceIds:[]}})});
+  });
   await page.goto(base+'/?qa=1');
   assert.equal(await page.locator('h1').textContent(),'Make room for a better financial future.');
   assert.ok(await page.locator('a[href="app.html"]').first().isVisible());
@@ -136,6 +146,20 @@ try{
   await page.locator('#chatInput').fill('What shop do I spend most at?');
   await page.locator('#chatInput').press('Enter');
   await page.waitForFunction(()=>document.querySelector('#messages .msg.bot:last-child')?.textContent.includes('Apartment rent'));
+  await page.getByRole('button',{name:'Chat settings',exact:true}).click();
+  await page.getByRole('button',{name:'Use cloud AI',exact:true}).click();
+  await page.getByRole('button',{name:'Enable cloud AI',exact:true}).click();
+  await page.waitForFunction(()=>localStorage.getItem('finChatEngine')==='cloud');
+  await page.locator('#chatInput').fill('Summarize my financial position');await page.locator('#chatInput').press('Enter');
+  await page.waitForFunction(()=>document.querySelector('#messages .msg.bot:last-child')?.textContent.includes('Cloud verified'));
+  assert.equal(cloudCalls,1);
+  fs.writeFileSync('build/reports/web-copilot-check.json',JSON.stringify(await page.evaluate(()=>buildCopilotPayload('Summarize my financial position'))));
+  failCloud=true;
+  await page.locator('#chatInput').fill('What shop do I spend most at?');await page.locator('#chatInput').press('Enter');
+  await page.waitForFunction(()=>document.querySelector('#messages .msg.bot:last-child')?.textContent.includes('Cloud AI did not respond'));
+  assert.ok((await page.locator('#messages .msg.bot').last().textContent()).includes('Apartment rent'));
+  assert.equal(await page.locator('.composer .send').isEnabled(),true);
+  await page.evaluate(()=>chooseLocalChat());
   await page.evaluate(()=>openView('home'));
   await page.locator('#languageSelect').selectOption('mr');
   await page.waitForFunction(()=>document.documentElement.lang==='mr');
