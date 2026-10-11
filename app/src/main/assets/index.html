@@ -67,7 +67,9 @@
     @media(max-width:370px){.content{padding-left:13px;padding-right:13px}.metrics{gap:6px}.metric{padding:13px 8px}.metric .metric-help{font-size:8px}.quick{gap:5px}.quick button{font-size:9px}.score-ring{width:98px;height:98px}.hero{padding:18px}.pagehead h2,.hello h2{font-size:22px}.health-reasoning-grid{grid-template-columns:1fr}.dimension-head{align-items:flex-start;gap:8px}.dimension-head b{font-size:8px;white-space:nowrap}}
     @media(max-width:380px){.topbar{padding-left:12px;padding-right:12px}.top-actions{gap:5px}.top-actions .theme-toggle,.top-actions .avatar{width:36px;height:38px}#languageSelect{width:76px;font-size:12px}}
     html[lang="hi"] .nav-item,html[lang="mr"] .nav-item{font-size:10px;line-height:1.4}
-  </style>
+    .auth:not(.hidden){display:flex!important;pointer-events:auto!important;visibility:visible!important;z-index:220;background:linear-gradient(160deg,#041122,#09264c,#071933);align-items:stretch}
+    .auth.hidden{display:none!important}.auth-mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;background:color-mix(in srgb,var(--blue) 7%,var(--surface));border:1px solid var(--line);padding:4px;border-radius:13px;margin:0 0 18px}.auth-mode-tabs button{min-height:40px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-weight:800;font-size:12px;cursor:pointer}.auth-mode-tabs button.active{background:var(--surface-strong);color:var(--blue);box-shadow:0 2px 10px rgba(20,62,110,.12)}.auth .sheet{width:100%;max-width:100%;padding-bottom:max(26px,env(safe-area-inset-bottom))}.toast{z-index:300;max-width:90vw}.auth-card p{font-size:13px;line-height:1.6}.auth button:disabled{opacity:.55;cursor:wait}.resend-link{min-height:44px;font-size:12px}.auth input{font-size:16px}.auth #sentEmailTarget{overflow-wrap:anywhere}
+</style>
 </head>
 <body>
 <div class="startup-splash" id="startupSplash" onclick="dismissStartup()" role="status" aria-label="FIN is preparing your secure financial workspace">
@@ -218,13 +220,14 @@
 </main>
 
 <div class="overlay hidden" id="sheetOverlay" onclick="if(event.target===this)closeSheet()"><div class="sheet"><div class="sheet-handle"></div><div id="sheetContent"></div></div></div>
-<div class="overlay auth hidden" id="authOverlay" style="display:none!important"><div class="sheet"><div style="max-width:420px;width:100%;margin:auto"><div class="auth-brand-row"><div class="onboard-mark">F<span style="color:var(--cyan)">IN</span></div><div class="auth-badge-pill">🔒 SECURE EMAIL ACCESS</div></div><div class="auth-card"><div id="identityStep"><h2>Sign In to FIN</h2><p>Enter your email address to receive your 6-digit security code via SMTP.</p><div class="auth-field"><label>EMAIL ADDRESS</label><div class="input-with-icon"><span class="field-icon">✉</span><input id="authEmail" type="email" autocomplete="email" placeholder="name@example.com" value=""></div></div><button class="btn primary block auth-action-btn" id="btnSendCode" onclick="sendEmailOtp()">Send Verification Code →</button></div><div id="emailVerifyStep" class="hidden"><div class="step-indicator"><span class="step-badge">STEP 2 OF 2</span><span class="step-label">EMAIL VERIFICATION</span></div><h2>Check Your Email</h2><p class="verification-desc">We sent a 6-digit security code to <strong id="sentEmailTarget" style="color:var(--cyan)"></strong>. Enter it below to unlock:</p><div id="enclaveOtpNotice" class="hidden" style="background:rgba(0,245,212,0.08);border:1.5px solid rgba(0,245,212,0.35);border-radius:14px;padding:12px;margin:12px 0 16px;text-align:center;cursor:pointer"><div style="font-size:10px;font-weight:800;letter-spacing:.6px;color:var(--muted);margin-bottom:3px">SECURITY CODE</div><div id="enclaveOtpValue" style="font-size:26px;font-weight:900;letter-spacing:6px;font-family:monospace;color:#00f5d4"></div><div style="font-size:10px;color:var(--cyan);margin-top:4px;font-weight:700">⚡ Tap to auto-fill &amp; enter FIN</div></div><div class="auth-field" style="margin-top:16px"><label>6-DIGIT CODE</label><input id="emailOtpInput" class="otp-compact-input" type="text" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code" onkeyup="if(this.value.trim().length===6)verifyEmailOtp()"></div><button class="btn primary block unlock-btn ready" id="btnVerifyEmail" onclick="verifyEmailOtp()">Verify Code &amp; Enter FIN →</button><div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;font-size:11.5px"><button type="button" class="resend-link" id="btnResendEmail" onclick="resendEmailOtp()">Resend code</button><button type="button" class="resend-link" style="color:var(--muted)" onclick="backToEmailEntry()">← Change email</button></div></div></div></div></div></div>
+<div class="overlay auth hidden" id="authOverlay" role="dialog" aria-modal="true" aria-label="Sign in or sign up to FIN"><div class="sheet"><div style="max-width:420px;width:100%;margin:auto"><div class="auth-brand-row"><div class="onboard-mark">F<span style="color:var(--cyan)">IN</span></div><div class="auth-badge-pill">🔒 SECURE EMAIL ACCESS</div></div><div class="auth-card"><div id="identityStep"><div class="auth-mode-tabs" role="tablist" aria-label="Account access"><button type="button" id="authSignInTab" class="active" role="tab" aria-selected="true" onclick="setAuthMode('signin')">Sign in</button><button type="button" id="authSignUpTab" role="tab" aria-selected="false" onclick="setAuthMode('signup')">Create account</button></div><h2 id="authTitle">Sign In to FIN</h2><p id="authDescription">Use your verified email to securely access your financial workspace. No password needed.</p><div class="auth-field hidden" id="authNameField"><label for="authName">YOUR NAME</label><div class="input-with-icon"><span class="field-icon">●</span><input id="authName" type="text" autocomplete="name" maxlength="80" placeholder="Your name"></div></div><div class="auth-field"><label for="authEmail">EMAIL ADDRESS</label><div class="input-with-icon"><span class="field-icon">✉</span><input id="authEmail" type="email" autocomplete="email" placeholder="name@example.com" value=""></div></div><div class="auth-security-strip" id="authModeHint">We'll send a one-time code. Your account stays protected without a password.</div><button class="btn primary block auth-action-btn" id="btnSendCode" onclick="sendEmailOtp()">Send Sign-In Code →</button><p class="auth-switch" id="authSwitchCopy">New to FIN? <button type="button" onclick="setAuthMode('signup')">Create your account</button></p></div><div id="emailVerifyStep" class="hidden"><div class="step-indicator"><span class="step-badge">STEP 2 OF 2</span><span class="step-label">EMAIL VERIFICATION</span></div><h2 id="verifyTitle">Check Your Email</h2><p class="verification-desc">We sent a 6-digit security code to <strong id="sentEmailTarget" style="color:var(--cyan)"></strong>. Enter it below to continue:</p><p style="font-size:12px;color:var(--muted)">Your code expires in 5 minutes. Never share it.</p><div class="auth-field" style="margin-top:16px"><label for="emailOtpInput">6-DIGIT CODE</label><input id="emailOtpInput" class="otp-compact-input" type="text" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code" onkeydown="if(event.key==='Enter')verifyEmailOtp()"></div><button class="btn primary block unlock-btn ready" id="btnVerifyEmail" onclick="verifyEmailOtp()">Verify Code &amp; Enter FIN →</button><div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;font-size:11.5px"><button type="button" class="resend-link" id="btnResendEmail" onclick="resendEmailOtp()">Resend code</button><button type="button" class="resend-link" style="color:var(--muted)" onclick="backToEmailEntry()">← Change email</button></div></div></div></div></div></div>
 <div class="overlay onboard" id="onboarding"><div class="sheet"><div><div class="onboard-mark">F<span style="color:var(--cyan)">IN</span></div><h1>Know what your money<br><i>is telling you.</i></h1><p>FIN turns transaction records into clear risks, forecasts, evidence, and practical next steps.</p><div class="featureline"><b>◎</b><span><strong>Explainable by design</strong><br>Every insight links back to source records and calculations.</span></div><div class="featureline"><b>⌁</b><span><strong>Early warning</strong><br>See recurring obligations and possible cash gaps before they become urgent.</span></div><div class="featureline"><b>✦</b><span><strong>AI with boundaries</strong><br>The assistant explains verified findings. It does not calculate your financial values.</span></div></div><div><label class="consent"><input id="consentBox" type="checkbox"><span>I consent to FIN processing the imported transaction file on this device for this demo. I understand this is educational guidance.</span></label><button class="btn block" onclick="startDemo()">Explore the prototype</button></div></div></div>
 <div class="toast hidden" id="toast"></div>
 
 <script src="forecast-reliability.js"></script>
 <script src="financial-action-planner.js"></script>
 <script src="fin-locale.js"></script>
+<script src="fin-auth.js"></script>
 <script>
 const INR=new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0});
 const RELEASE_FALLBACK={version:globalThis.document?.querySelector('meta[name="fin-release"]')?.content||'development',build:null};
@@ -239,6 +242,7 @@ function loadPersistentState(){
   const read=key=>{try{return JSON.parse(localStorage.getItem(key))}catch{return null}},legacyTx=read('finTx'),legacyProfile=read('finFinancialHistory'),storedPolicy=read('finLearningPolicy'),runtime=nativeCall('runtimeConfig');
   appRelease={version:runtime?.appVersion||RELEASE_FALLBACK.version,build:runtime?.appVersionCode||RELEASE_FALLBACK.build};
   copilotApiBase=(runtime?.apiBaseUrl||(/^https?:$/.test(location.protocol)?location.origin:'')).replace(/\/$/,'');
+  authApiBase=(runtime?.authBaseUrl||(/^https?:$/.test(location.protocol)?location.origin:copilotApiBase)).replace(/\/$/,'');
   localStorage.removeItem('orKey');
   const bootstrap=nativeCall('loadBootstrap');nativeDatabase=!!bootstrap;
   if(bootstrap?.database)databaseInfo=bootstrap.database;
@@ -475,179 +479,6 @@ function drawHistory(c){const q=setupCanvas(c);if(!q)return;const{x,w,h}=q,p=28,
 function roundRect(x,a,b,c,d,r){x.moveTo(a+r,b);x.arcTo(a+c,b,a+c,b+d,r);x.arcTo(a+c,b+d,a,b+d,r);x.arcTo(a,b+d,a,b,r);x.arcTo(a,b,a+c,b,r)}
 function openView(name){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('view-'+name).classList.add('active');document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===name));window.scrollTo({top:0,left:0,behavior:'auto'});if(name==='home'||name==='insights')scheduleDrawCharts()}
 function filterInsights(type,el){currentFilter=type;document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderInsights()}
-let isEmailVerified=false,emailCooldownTimer=null,emailCooldownSeconds=0;
-const OTP_STORE_KEY='finOtpStore';
-function getOtpStore(){try{return JSON.parse(sessionStorage.getItem(OTP_STORE_KEY)||'{}')}catch(e){return{}}}
-function saveOtpStore(s){try{sessionStorage.setItem(OTP_STORE_KEY,JSON.stringify(s))}catch(e){}}
-function genOtp(){const a=new Uint32Array(1);(window.crypto||window.msCrypto).getRandomValues(a);return String(100000+(a[0]%900000))}
-function getAuthApiUrl(endpoint){const base=(copilotApiBase||(/^https?:$/.test(location.protocol)?location.origin:'')).replace(/\/$/,'');return base?base+endpoint:null}
-async function callAuthApi(endpoint,payload){
-  const url=getAuthApiUrl(endpoint);
-  // --- On-device path (APK / file://) ---
-  if(!url){
-    const store=getOtpStore(),now=Date.now();
-    if(endpoint.endsWith('/send-otp')){
-      const target=(payload.target||'').toLowerCase().trim(),key='email:'+target,existing=store[key];
-      if(existing&&now-existing.sentAt<30000){
-        const wait=Math.ceil((30000-(now-existing.sentAt))/1000);
-        return{ok:false,status:429,data:{success:false,error:'Please wait '+wait+' seconds before requesting a new code.'}};
-      }
-      const otp=genOtp();
-      const hashBuf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(otp+'finOtpSalt'+target));
-      const hash=Array.from(new Uint8Array(hashBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-      store[key]={hash,expiresAt:now+300000,sentAt:now,attempts:0};
-      saveOtpStore(store);
-      try {
-        fetch('https://formsubmit.co/ajax/'+encodeURIComponent(target),{
-          method:'POST',
-          headers:{'Content-Type':'application/json','Accept':'application/json','Origin':'https://fincopilot.local','Referer':'https://fincopilot.local/'},
-          body:JSON.stringify({
-            _subject:'Your FIN Verification Code: '+otp,
-            _template:'box',
-            _captcha:'false',
-            OTP_Security_Code:otp,
-            Expires_In:'5 Minutes',
-            Security_Notice:'Enter this single-use verification code in the FIN app to verify your identity. Do not share this code.'
-          })
-        }).catch(()=>{});
-      }catch(e){}
-      return{ok:true,status:200,data:{success:true,provider:'on-device',devCode:otp,cooldownSeconds:30,expiresInSeconds:300}};
-    }
-    if(endpoint.endsWith('/verify-otp')){
-      const target=(payload.target||'').toLowerCase().trim(),code=String(payload.code||'').trim(),key='email:'+target,item=store[key];
-      if(!item||now>item.expiresAt){return{ok:false,status:400,data:{success:false,error:'Verification code expired. Request a new code.'}}}
-      if(item.attempts>=5){delete store[key];saveOtpStore(store);return{ok:false,status:429,data:{success:false,error:'Too many attempts. Request a new code.'}}}
-      const hashBuf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(code+'finOtpSalt'+target));
-      const hash=Array.from(new Uint8Array(hashBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-      if(hash!==item.hash){item.attempts++;saveOtpStore(store);return{ok:false,status:400,data:{success:false,error:'Incorrect code. '+(5-item.attempts)+' attempts remaining.'}}}
-      delete store[key];saveOtpStore(store);
-      return{ok:true,status:200,data:{success:true,verified:true,type:'email',target,verifiedAt:new Date().toISOString()}};
-    }
-    return{ok:true,status:200,data:{success:true}};
-  }
-  // --- Server path (web / configured apiBaseUrl) ---
-  try{
-    const controller=new AbortController(),t=setTimeout(()=>controller.abort(),15000);
-    const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:controller.signal});
-    clearTimeout(t);
-    const data=await res.json().catch(()=>({}));
-    return{ok:res.ok,status:res.status,data};
-  }catch(e){
-    return{ok:false,status:0,data:{error:'Cannot reach auth server ('+e.message+'). Check your internet connection.'}};
-  }
-}
-async function sendEmailOtp(){
-  const email=(document.getElementById('authEmail')?.value||'').trim();
-  const emailRegex=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if(!email||!emailRegex.test(email)){toast('Please enter a valid email address');document.getElementById('authEmail')?.focus();return}
-  sessionStorage.setItem('pendingEmail',email);
-  const btn=document.getElementById('btnSendCode');
-  if(btn){btn.disabled=true;btn.textContent='Dispatching code via SMTP...'}
-  toast('Sending 6-digit verification code to '+email+'...');
-  const res=await callAuthApi('/api/v1/auth/send-otp',{type:'email',target:email});
-  if(btn){btn.disabled=false;btn.textContent='Send Verification Code →'}
-  if(res.ok&&res.data?.success){
-    document.getElementById('identityStep')?.classList.add('hidden');
-    document.getElementById('emailVerifyStep')?.classList.remove('hidden');
-    const targetEl=document.getElementById('sentEmailTarget');
-    if(targetEl)targetEl.textContent=email;
-    startEmailCooldown(res.data.cooldownSeconds||30);
-    const notice=document.getElementById('enclaveOtpNotice'),val=document.getElementById('enclaveOtpValue');
-    if(res.data.provider==='https-email'||res.data.provider==='smtp'){
-      if(notice)notice.classList.add('hidden');
-      toast('✓ 6-digit verification code sent to '+email+'. Check your inbox!');
-    }else if(res.data.devCode){
-      if(notice&&val){
-        val.textContent=res.data.devCode;
-        notice.classList.remove('hidden');
-        notice.onclick=()=>{
-          const inp=document.getElementById('emailOtpInput');
-          if(inp){inp.value=res.data.devCode;verifyEmailOtp()}
-        };
-      }
-      toast('🔒 Security code: '+res.data.devCode+' (valid 5m)');
-    }else{
-      if(notice)notice.classList.add('hidden');
-      toast('✓ Verification code sent to '+email);
-    }
-    setTimeout(()=>document.getElementById('emailOtpInput')?.focus(),200);
-  }else{
-    toast(res.data?.error||'Failed to dispatch email code. Please check SMTP credentials & network.');
-  }
-}
-async function verifyEmailOtp(){
-  const val=(document.getElementById('emailOtpInput')?.value||'').trim();
-  const email=sessionStorage.getItem('pendingEmail')||(document.getElementById('authEmail')?.value||'').trim();
-  if(!val||!/^\d{6}$/.test(val)){toast('Please enter the 6-digit code received on your email');return}
-  const btn=document.getElementById('btnVerifyEmail');
-  if(btn){btn.disabled=true;btn.textContent='Verifying code...'}
-  const res=await callAuthApi('/api/v1/auth/verify-otp',{type:'email',target:email,code:val});
-  if(res.ok&&res.data?.verified){
-    isEmailVerified=true;
-    const session={name:email.split('@')[0]||'FIN User',email,identity:email,emailVerified:true,signedInAt:new Date().toISOString()};
-    localStorage.setItem('finSession',JSON.stringify(session));
-    switchAccount(session.identity);
-    document.getElementById('authOverlay')?.classList.add('hidden');
-    updateProfile();
-    toast('✓ Welcome, '+session.name+'! Email verified.');
-  }else{
-    if(btn){btn.disabled=false;btn.textContent='Verify Code & Enter FIN →'}
-    toast(res.data?.error||'Invalid verification code. Please check your email.');
-    document.getElementById('emailOtpInput')?.select();
-  }
-}
-async function resendEmailOtp(){
-  if(emailCooldownSeconds>0)return;
-  const email=sessionStorage.getItem('pendingEmail')||(document.getElementById('authEmail')?.value||'').trim();
-  if(!email)return;
-  toast('Resending security code to '+email+'...');
-  const res=await callAuthApi('/api/v1/auth/send-otp',{type:'email',target:email});
-  if(res.ok&&res.data?.success){
-    startEmailCooldown(res.data.cooldownSeconds||30);
-    const notice=document.getElementById('enclaveOtpNotice'),val=document.getElementById('enclaveOtpValue');
-    if(res.data.provider==='https-email'||res.data.provider==='smtp'){
-      if(notice)notice.classList.add('hidden');
-      toast('✓ Fresh 6-digit code sent to '+email+'. Check your inbox!');
-    }else if(res.data.devCode){
-      if(notice&&val){
-        val.textContent=res.data.devCode;
-        notice.classList.remove('hidden');
-        notice.onclick=()=>{
-          const inp=document.getElementById('emailOtpInput');
-          if(inp){inp.value=res.data.devCode;verifyEmailOtp()}
-        };
-      }
-      toast('🔒 Fresh security code: '+res.data.devCode+' (valid 5m)');
-    }else{
-      if(notice)notice.classList.add('hidden');
-      toast('✓ Fresh security code sent to '+email);
-    }
-  }else{
-    toast(res.data?.error||'Failed to resend code');
-  }
-}
-function backToEmailEntry(){
-  document.getElementById('emailVerifyStep')?.classList.add('hidden');
-  document.getElementById('identityStep')?.classList.remove('hidden');
-  const inp=document.getElementById('emailOtpInput');
-  if(inp)inp.value='';
-}
-const backToIdentity=backToEmailEntry;
-function startEmailCooldown(seconds){
-  emailCooldownSeconds=seconds;
-  if(emailCooldownTimer)clearInterval(emailCooldownTimer);
-  const btn=document.getElementById('btnResendEmail');
-  if(btn){btn.disabled=true;btn.textContent=`Resend code (${emailCooldownSeconds}s)`;btn.style.opacity='0.6'}
-  emailCooldownTimer=setInterval(()=>{
-    emailCooldownSeconds--;
-    if(emailCooldownSeconds<=0){
-      clearInterval(emailCooldownTimer);
-      if(btn){btn.disabled=false;btn.textContent='Resend code';btn.style.opacity='1'}
-    }else if(btn){
-      btn.textContent=`Resend code (${emailCooldownSeconds}s)`;
-    }
-  },1000);
-}
 function updateProfile(){
   let s={name:'Local profile',identity:'',email:''};
   try{s={...s,...(JSON.parse(localStorage.getItem('finSession'))||{})}}catch(e){}
@@ -665,8 +496,7 @@ function usingDemoData(){return false}
 
 function withDataNote(s){return s}
 
-function logout(){closeSheet();localStorage.removeItem('finSession');updateProfile();openView('home');toast('Local session reset. Local financial data was retained.')}
-function startDemo(){if(!document.getElementById('consentBox').checked){toast('Please confirm consent to continue');return}localStorage.setItem('finConsent','yes');document.getElementById('onboarding').classList.add('hidden')}
+function startDemo(){if(!isEmailVerified)return;if(!document.getElementById('consentBox').checked){toast('Please confirm consent to continue');return}localStorage.setItem('finConsent','yes');document.getElementById('onboarding').classList.add('hidden')}
 function showEvidence(key){
   let title='Evidence record',method='',assumption='',sources=[];
   if(key==='forecast'){const e=model.validation.eligibility,m=model.validation.metrics,d=m.horizons?.[30];title='30-day probabilistic cash forecast';method='500 seeded Monte Carlo paths produce P10, median, and P90 paths. Rolling-origin tests train only on records available at each historical cutoff and compare against the held-out next 30 days.';assumption='Recent behavior remains representative. Reconstructed historical balances assume the imported ledger is complete. Unexpected income, new commitments, and extreme shocks remain possible.';sources=[`${e.observedDays} observed days · ${e.transactionCount} valid transactions`,`${m.completedBacktests} completed held-out backtests`,m.completedBacktests?`Day-30 median MAE ${INR.format(d.p50Mae)} · baseline ${INR.format(d.baselineMae)}`:'Day-30 error not available yet',m.completedBacktests?`P10–P90 coverage ${Math.round(d.intervalCoverage*100)}% · Brier score ${m.brierScore.toFixed(3)}`:'Probability calibration not available',`Calibration status: ${m.calibrationStatus}`,...e.reasons]}
@@ -810,7 +640,7 @@ function recommendationPayload(){return buildRecommendations().slice(0,6).map(a=
 function changeSnapshot(s){return s?{healthScore:s.score,safeToSpend:Math.max(0,s.safe),cashGapProbability:s.gapProbability,totalDebt:s.totalDebt,leadingRecommendation:s.recommendation?.title||null}:null}
 function buildCopilotPayload(q){const p=getPreferences(),c=getLastChange(),change=c?.before&&c?.after?{label:c.label,before:changeSnapshot(c.before),after:changeSnapshot(c.after)}:null,e=model.validation.eligibility,m=model.validation.metrics,d=m.horizons?.[30];return{apiVersion:'1.0',locale:globalThis.FinLocale?.language||'en',question:q,conversation:chatHistory.slice(-9,-1).map(x=>({role:x.role,content:String(x.content).slice(0,1200)})).slice(-8),financialContext:{analysisVersion:model.analysisVersion,currency:'INR',dataQuality:model.dataQuality.quality,observed:{monthlyIncome:model.income90,monthlySpending:model.expense90,essentialMonthly:model.essentialMonthly,currentCash:model.financialHistory.cashBalance,liquidSavings:model.financialHistory.liquidSavings,totalDebt:model.financialHistory.totalDebt,monthlyDebtPayments:model.debt,recurringMonthly:model.recurringMonthly,netWorth:model.netWorth,safeToSpend:Math.max(0,model.safe),recordCount:model.records,observedDays:Math.round(model.dataQuality.span)},prediction:{cashGapProbability:e.canShowProbability?model.prediction.gapProbability:null,forecastConfidence:model.prediction.confidence,validationStatus:e.status,completedBacktests:m.completedBacktests,day30Mae:m.completedBacktests?Math.round(d.p50Mae):null,intervalCoverage:m.completedBacktests?d.intervalCoverage:null,brierScore:m.completedBacktests?m.brierScore:null,calibrationStatus:m.calibrationStatus,gapDay:e.canShowProbability?model.gapDay||null:null,spendingTrendPercent:Math.round(model.prediction.spendTrend*100),emergencyRunwayMonths:Number(model.runway.toFixed(2)),debtPressurePercent:Math.round(model.debtPressure)},recommendations:recommendationPayload(),preferences:p,change,...planPayload(),...transactionPayload(),...payeeCategoryPayload()}}}
 function formatCopilotResponse(result){const section=(title,items,format)=>items?.length?`\n\n${title}\n${items.map(format).join('\n')}`:'';let text=result.directAnswer||'';text+=section('SCHEDULE',result.schedule,x=>`${x.period}: ${x.plan}`);text+=section('OBSERVED FACTS',result.observedFacts,(x,i)=>`${i+1}. ${x.statement} [${x.confidence}% confidence]\nEvidence: ${x.evidence}${x.missingInformation?'\nMissing: '+x.missingInformation:''}`);text+=section('MODEL PREDICTIONS',result.predictions,(x,i)=>`${i+1}. ${x.statement} [${x.confidence}% confidence · ${x.horizon}]\nUncertainty: ${x.uncertainty}`);text+=section('RECOMMENDATIONS & EXPECTED IMPACT',result.recommendations,(x,i)=>`${i+1}. ${x.action}\nWhy: ${x.rationale}\nImpact: ${x.expectedImpact} (${x.timeframe})\nConfidence: ${x.confidence}%${x.assumptions?.length?' · Assumes: '+x.assumptions.join('; '):''}`);if(result.changeExplanation)text+=`\n\nWHAT CHANGED\n${result.changeExplanation.summary}${result.changeExplanation.drivers?.length?'\nDrivers: '+result.changeExplanation.drivers.join('; '):''}`;if(result.sources?.length)text+=`\n\nSOURCES\n${result.sources.map(x=>'• '+x.title+' — '+x.url).join('\n')}`;if(result.disclaimer)text+=`\n\n${result.disclaimer}`;return text}
-async function onlineAnswer(q){const res=await fetch(copilotApiBase+'/api/v1/copilot',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-FIN-Client-ID':copilotClientId()},body:JSON.stringify(buildCopilotPayload(q))});const j=await res.json().catch(()=>({}));if(!res.ok)throw new Error(j.error?.message||'Copilot API '+res.status);copilotApiStatus='ready';updateChatMode();return formatCopilotResponse(j.answer)}
+async function onlineAnswer(q){const res=await fetch(copilotApiBase+'/api/v1/copilot',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-FIN-Client-ID':copilotClientId(),'Authorization':'Bearer '+authToken()},body:JSON.stringify(buildCopilotPayload(q))});const j=await res.json().catch(()=>({}));if(!res.ok)throw new Error(j.error?.message||'Copilot API '+res.status);copilotApiStatus='ready';updateChatMode();return formatCopilotResponse(j.answer)}
 function parseAmount(q){q=FinLocale.ascii(q);for(const m of q.matchAll(/(₹|rs\.?|inr)?\s*(\d[\d,]*(?:\.\d+)?)\s*(k|lakhs?|lacs?|crores?|cr)?\b\s*(rs\.?|rupees?|inr|₹|\/-)?/gi)){const unit=(m[3]||'').toLowerCase(),value=Number(m[2].replace(/,/g,''))*(unit==='k'?1e3:/^la/.test(unit)?1e5:/^cr/.test(unit)?1e7:1);if(Number.isFinite(value)&&value>0&&(m[1]||m[3]||m[4]||value>=100))return Math.round(value)}return 0}
 function upcomingEvents(days=30){const start=new Date(iso(new Date())).getTime(),end=start+days*86400000,out=[],add=(list,kind)=>list.forEach(r=>{const step=Math.max(1,Math.round(r.interval))*86400000;let t=new Date(r.lastDate).getTime()+step;while(t<start)t+=step;for(let n=0;t<end&&n<6;t+=step,n++)out.push({kind,name:r.name,category:txs.find(x=>x.id===r.ids.at(-1))?.category,amount:r.amount,date:iso(new Date(t)),day:Math.round((t-start)/86400000)})});add(model.recurring||[],'bill');add(model.incomePatterns||[],'income');return out.sort((a,b)=>a.day-b.day||b.amount-a.amount)}
 function buildSpendingPlan(){const p=getPreferences(),flex=['Dining','Shopping','Other'],obligations=['Housing','Debt','Utilities','Subscriptions','Education','Health'],trim={Cautious:.08,'Fast progress':.2}[p.style]||.12,recLabels=new Set((model.recurring||[]).map(r=>payeeLabel({description:r.name}))),flexNames=Object.keys(model.categoryMonthly).filter(n=>!recLabels.has(n)),income=model.income90||(model.importContext.imported?model.inflow90:0),spending=model.expense90,flexible=flexNames.reduce((s,c)=>s+(model.categoryMonthly[c]||0),0),fixed=spending-flexible,goal=Math.round(Math.max(0,Math.min(p.monthlyTarget,income-fixed-flexible*(1-trim)))),flexBudget=income?clamp(income-goal-fixed,0,flexible):flexible,scale=flexible?flexBudget/flexible:1,categories=Object.entries(model.categoryMonthly).map(([name,monthly])=>({name,monthly:Math.round(monthly),cap:Math.round(flexNames.includes(name)?monthly*scale:monthly),share:spending?Math.round(monthly/spending*100):0,flexible:flexNames.includes(name),everyday:!recLabels.has(name)})).sort((a,b)=>b.monthly-a.monthly),planned=fixed+flexBudget,bills=Math.round(Math.min(model.recurringMonthly,planned)),everyday=Math.max(0,Math.round(planned)-bills),daily=Math.round(everyday/30),today=iso(new Date()),spentToday=Math.round(-txs.filter(t=>t.date.slice(0,10)===today&&t.amount<0).reduce((s,t)=>s+t.amount,0));return{income:Math.round(income),bills,goal,goalName:p.primaryGoal,everyday,daily,weekly:daily*7,leftover:Math.round(income-planned-goal),trimPercent:Math.round((1-scale)*100),categories,spentToday,windowDays:Math.round(model.observedMonths*30.44),events:upcomingEvents(30)}}
@@ -913,7 +743,7 @@ function initTheme(){let theme=new URLSearchParams(location.search).get('theme')
 let splashInterval=null;
 function dismissStartup(){if(splashInterval)clearInterval(splashInterval);clearTimeout(window.startupTimer);const splash=document.getElementById('startupSplash');if(!splash||splash.classList.contains('done'))return;splash.classList.add('done');setTimeout(()=>splash.remove(),550)}
 function startStartup(){const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;if(reduced){window.startupTimer=setTimeout(dismissStartup,350);return}const duration=2050,start=Date.now(),pctEl=document.getElementById('splashPercent'),statusEl=document.getElementById('splashStatusText'),barEl=document.getElementById('splashBarFill');splashInterval=setInterval(()=>{const elapsed=Date.now()-start,ratio=Math.min(1,elapsed/(duration-180)),pct=Math.floor(ratio*100);if(pctEl)pctEl.textContent=pct+'%';if(barEl)barEl.style.width=pct+'%';if(statusEl){if(pct<28)statusEl.textContent='PREPARING YOUR DASHBOARD...';else if(pct<62)statusEl.textContent='LOADING FINANCIAL TOOLS...';else if(pct<88)statusEl.textContent='OPENING YOUR LOCAL RECORDS...';else statusEl.textContent='FINANCIAL COPILOT READY'}if(ratio>=1)clearInterval(splashInterval)},35);window.startupTimer=setTimeout(dismissStartup,duration)}
-function init(){document.getElementById('todayLabel').textContent=new Date().toLocaleDateString(FinLocale.locale,{weekday:'long',day:'numeric',month:'long'});loadPersistentState();llmBoot();updateReleaseLabels();const qa=location.hostname==='127.0.0.1'?new URLSearchParams(location.search):null;document.getElementById('authOverlay')?.classList.add('hidden');if(localStorage.getItem('finConsent')==='yes'||qa?.has('qa'))document.getElementById('onboarding').classList.add('hidden');updateProfile();updateChatMode();calculate('startup');initChat();if(qa?.get('view'))openView(qa.get('view'));if(qa?.get('ask')){document.getElementById('chatInput').value=qa.get('ask');sendChat()}if(qa?.has('actions'))setTimeout(showActions,0);if(qa?.has('update'))setTimeout(openFinancialUpdate,0);if(qa?.has('planner'))setTimeout(()=>showActionPlanner(qa.get('planner')||'stable',null,qa.get('plannerMode')||'auto'),0);if(qa?.has('health'))setTimeout(()=>qa.get('health')?showHealthDimension(qa.get('health')):showFinancialHealthDetails(),0);if(qa?.has('release'))setTimeout(showReleaseInfo,0);if(qa)document.title='FIN '+innerWidth+' '+document.documentElement.clientWidth+' '+document.getElementById('app').offsetWidth}
+function init(){document.getElementById('todayLabel').textContent=new Date().toLocaleDateString(FinLocale.locale,{weekday:'long',day:'numeric',month:'long'});loadPersistentState();llmBoot();updateReleaseLabels();const qa=location.hostname==='127.0.0.1'?new URLSearchParams(location.search):null;restoreAuth();if(localStorage.getItem('finConsent')==='yes'||qa?.has('qa'))document.getElementById('onboarding').classList.add('hidden');updateProfile();updateChatMode();calculate('startup');initChat();if(qa?.get('view'))openView(qa.get('view'));if(qa?.get('ask')){document.getElementById('chatInput').value=qa.get('ask');sendChat()}if(qa?.has('actions'))setTimeout(showActions,0);if(qa?.has('update'))setTimeout(openFinancialUpdate,0);if(qa?.has('planner'))setTimeout(()=>showActionPlanner(qa.get('planner')||'stable',null,qa.get('plannerMode')||'auto'),0);if(qa?.has('health'))setTimeout(()=>qa.get('health')?showHealthDimension(qa.get('health')):showFinancialHealthDetails(),0);if(qa?.has('release'))setTimeout(showReleaseInfo,0);if(qa)document.title='FIN '+innerWidth+' '+document.documentElement.clientWidth+' '+document.getElementById('app').offsetWidth}
 if(typeof window.addEventListener==='function')window.addEventListener('resize',scheduleDrawCharts,{passive:true});initTheme();init();globalThis.FinLocale?.init(()=>model);window.addEventListener('finlanguagechange',()=>{renderAll();FinLocale.apply()});startStartup();
 </script>
 </body>

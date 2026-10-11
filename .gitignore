@@ -9,8 +9,13 @@ local.properties
 node_modules/
 .vercel/
 .env.local
+.env
+.env.*
+!.env.example
 .env.*.local
 npm-debug.log*
 *.keystore
 *.jks
 app/src/main/assets/model.task
+.vercel
+.env*

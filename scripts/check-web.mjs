@@ -10,6 +10,8 @@ if (!scripts.length) throw new Error('Embedded application scripts were not foun
 scripts.forEach((match, index) => new vm.Script(match[1], { filename: `app/src/main/assets/index.html#script-${index + 1}` }));
 new vm.Script(reliability, { filename: 'app/src/main/assets/forecast-reliability.js' });
 new vm.Script(planner, { filename: 'app/src/main/assets/financial-action-planner.js' });
+new vm.Script(fs.readFileSync(new URL('../app/src/main/assets/fin-auth.js', import.meta.url),'utf8'),{filename:'fin-auth.js'});
+new vm.Script(fs.readFileSync(new URL('../app/src/main/assets/login.js', import.meta.url),'utf8'),{filename:'login.js'});
 const healthScoreStart = html.indexOf('function calculateHealthScore');
 const healthScoreEnd = html.indexOf('function calculate(', healthScoreStart);
 if (healthScoreStart < 0 || healthScoreEnd < 0) throw new Error('Pure health-score calculator was not found.');
@@ -28,7 +30,10 @@ if (!html.includes('src="financial-action-planner.js"')) throw new Error('Financ
 const forbidden = [
   'openrouter.ai/api',
   "localStorage.setItem('orKey'",
-  'Authorization\':\'Bearer',
+  'AI_GATEWAY_API_KEY',
+  'SMTP_PASS',
+  'formsubmit.co',
+  'devCode',
 ];
 
 for (const value of forbidden) {

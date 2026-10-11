@@ -2,6 +2,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { spawn } from 'node:child_process';
 import { chromium } from 'playwright';
+import { memoryAdapter } from 'better-auth/adapters/memory';
+import { createFINAuth } from '../lib/auth-service.js';
+import { handleAuth } from '../api/v1/auth.js';
 
 // Development verification only. Synthetic rows enter through the actual CSV input.
 const port=3111,base=`http://127.0.0.1:${port}`;
@@ -15,9 +18,34 @@ try{
   const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:1});
   page=await context.newPage();
   page.on('pageerror',error=>{errors.push(error.message);console.error('Browser error:',error.message);});
+  const outbox=[];
+  const auth=createFINAuth({database:memoryAdapter({user:[],session:[],account:[],verification:[],rateLimit:[]}),secret:'synthetic-browser-secret-not-for-production-123',baseURL:base,deliver:async message=>{outbox.push(message)}});
+  await page.route('**/api/v1/auth/**',async route=>{
+    const r=route.request();
+    const headers={...r.headers()};delete headers['content-length'];
+    const response=await handleAuth(new Request(r.url(),{method:r.method(),headers,body:r.method()==='POST'?r.postData():undefined}),auth);
+    await route.fulfill({status:response.status,headers:Object.fromEntries(response.headers),body:await response.text()});
+  });
   await page.goto(base+'/?qa=1');
-  await page.waitForFunction(()=>document.getElementById('transactionList')?.textContent.includes('No transactions yet'));
-  await page.waitForFunction(()=>!document.getElementById('startupSplash'));
+  await page.waitForURL('**/login.html');
+  assert.equal(await page.locator('#title').textContent(),'Sign in');
+  await page.locator('#switchCopy a').click();
+  await page.locator('#email').fill('synthetic@example.com');
+  await page.locator('#phone').fill('9876543210');
+  await page.locator('#password').fill('Test-only-password-483!');
+  await page.locator('#confirmPassword').fill('Test-only-password-483!');
+  await page.locator('#submitButton').click();
+  await page.waitForURL('**/login.html#signin');
+  await page.locator('#password').fill('wrong-password');
+  await page.locator('#submitButton').click();
+  await page.waitForFunction(()=>document.getElementById('message').textContent.includes('Incorrect mobile number or password'));
+  assert.equal(await page.evaluate(()=>sessionStorage.getItem('finAuthToken')),null);
+  await page.locator('#password').fill('Test-only-password-483!');
+  await page.locator('#submitButton').click();
+  await page.waitForURL('**/index.html');
+  await page.waitForFunction(()=>isEmailVerified===true);
+  await page.locator('#consentBox').check();
+  await page.locator('#onboarding button').click();
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('finTx')).length),0);
   assert.equal(await page.locator('#healthScore').textContent(),'—');
   await page.evaluate(()=>openView('data'));
@@ -76,6 +104,7 @@ try{
   await page.waitForTimeout(200);
   assert.equal(await page.evaluate(()=>localStorage.getItem('finTx')),imported);
   await page.reload();
+  await page.waitForFunction(()=>isEmailVerified===true);
   await page.waitForFunction(()=>document.getElementById('transactionList')?.querySelectorAll('.transaction').length===24);
   await page.waitForFunction(()=>!document.getElementById('startupSplash'));
   await page.evaluate(()=>openView('home'));
@@ -83,6 +112,11 @@ try{
   await page.screenshot({path:'build/reports/integrated-home.png',fullPage:true});
   await page.locator('#languageSelect').selectOption('mr');
   await page.screenshot({path:'build/reports/integrated-marathi.png',fullPage:true});
+  await page.evaluate(()=>{void logout()});
+  await page.waitForURL('**/login.html');
+  assert.ok(await page.locator('#accessForm').isVisible());
+  assert.equal(await page.evaluate(()=>sessionStorage.getItem('finAuthToken')),null);
+  await page.screenshot({path:'build/reports/email-sign-in.png',fullPage:true});
   assert.deepEqual(errors,[]);
-  console.log('Verified browser flow: empty account, rejected CSV, real CSV import, P2 snapshot/chat facts, six-month planner, Marathi numbers/reserve input, reload and retained data.');
+  console.log('Verified browser flow: separate sign-up, incorrect-password rejection, mobile/password sign-in, session reload and logout; CSV import, chat, planner and Marathi numbers. Authentication database was a test fixture.');
 }catch(error){console.error('Browser state:',await page?.locator('body').innerText().catch(()=>''));throw error;}finally{await browser?.close();server.kill();}

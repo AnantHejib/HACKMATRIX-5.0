@@ -13,11 +13,18 @@ const { POST: authPost, OPTIONS: authOptions, GET: authGet } = await import('../
 const port = Number(process.env.PORT) || 3000;
 const page = new URL('../app/src/main/assets/index.html', import.meta.url);
 const staticAssets = new Map([
+  ['/login.html', new URL('../app/src/main/assets/login.html', import.meta.url)],
+  ['/login.js', new URL('../app/src/main/assets/login.js', import.meta.url)],
+  ['/fin-auth.js', new URL('../app/src/main/assets/fin-auth.js', import.meta.url)],
   ['/fin-locale.js', new URL('../app/src/main/assets/fin-locale.js', import.meta.url)],
   ['/forecast-reliability.js', new URL('../app/src/main/assets/forecast-reliability.js', import.meta.url)],
   ['/financial-action-planner.js', new URL('../app/src/main/assets/financial-action-planner.js', import.meta.url)],
 ]);
 const routes = {
+  'POST /api/v1/auth/signup': authPost,
+  'OPTIONS /api/v1/auth/signup': authOptions,
+  'POST /api/v1/auth/signin': authPost,
+  'OPTIONS /api/v1/auth/signin': authOptions,
   'GET /api/health': health,
   'OPTIONS /api/health': healthOptions,
   'POST /api/v1/copilot': copilot,
@@ -27,6 +34,10 @@ const routes = {
   'POST /api/v1/auth/verify-otp': authPost,
   'OPTIONS /api/v1/auth/verify-otp': authOptions,
   'GET /api/v1/auth/status': authGet,
+  'GET /api/v1/auth/session': authGet,
+  'OPTIONS /api/v1/auth/session': authOptions,
+  'POST /api/v1/auth/logout': authPost,
+  'OPTIONS /api/v1/auth/logout': authOptions,
   'OPTIONS /api/v1/auth/status': authOptions,
   'POST /api/v1/auth/config': authPost,
   'OPTIONS /api/v1/auth/config': authOptions,
@@ -47,7 +58,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     if (req.method === 'GET' && staticAssets.has(url.pathname)) {
-      res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.writeHead(200, { 'Content-Type': url.pathname.endsWith('.html')?'text/html; charset=utf-8':'text/javascript; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(fs.readFileSync(staticAssets.get(url.pathname)));
       return;
     }

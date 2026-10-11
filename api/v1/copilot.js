@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { copilotRequestSchema } from '../../lib/contracts.js';
 import { createCopilotAnswer } from '../../lib/copilot-service.js';
 import { corsHeaders, json, readJson } from '../../lib/http.js';
+import { requireSession } from '../../lib/auth-service.js';
 
 export function OPTIONS(request) {
   return new Response(null, { status: 204, headers: corsHeaders(request) });
@@ -22,6 +23,7 @@ export async function POST(request) {
       }, 400);
     }
 
+    await requireSession(request);
     const response = await createCopilotAnswer(parsed.data, {
       requestId,
       clientId: request.headers.get('x-fin-client-id')?.slice(0, 128),

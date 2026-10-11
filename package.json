@@ -7,6 +7,9 @@
     "node": ">=22"
   },
   "scripts": {
+    "auth:stage": "node scripts/stage-auth-deploy.mjs",
+    "auth:check": "node scripts/check-auth.mjs",
+    "auth:migrate": "node scripts/migrate-auth.mjs",
     "dev": "node scripts/dev-server.mjs",
     "check:browser": "node scripts/check-browser.mjs",
     "test": "node --test",
@@ -15,6 +18,9 @@
   },
   "dependencies": {
     "ai": "^6.0.0",
+    "better-auth": "^1.7.7",
+    "nodemailer": "^10.1.0",
+    "pg": "^8.23.1",
     "zod": "^4.0.0"
   },
   "devDependencies": {

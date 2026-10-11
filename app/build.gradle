@@ -4,6 +4,8 @@ import groovy.json.JsonSlurper
 
 def finApiBaseUrl = (project.findProperty('FIN_API_BASE_URL') ?: System.getenv('FIN_API_BASE_URL') ?: '').toString()
 def escapedFinApiBaseUrl = finApiBaseUrl.replace('\\', '\\\\').replace('"', '\\"')
+def finAuthBaseUrl = (project.findProperty('FIN_AUTH_BASE_URL') ?: System.getenv('FIN_AUTH_BASE_URL') ?: 'https://fin-auth-gilt.vercel.app').toString()
+def escapedFinAuthBaseUrl = finAuthBaseUrl.replace('\\', '\\\\').replace('"', '\\"')
 def releaseMetadata = new JsonSlurper().parse(rootProject.file('release.json'))
 def releaseStoreFile = System.getenv('FIN_RELEASE_STORE_FILE')
 def releaseStorePassword = System.getenv('FIN_RELEASE_STORE_PASSWORD')
@@ -22,6 +24,7 @@ android {
         versionCode releaseMetadata.versionCode as int
         versionName releaseMetadata.version.toString()
         buildConfigField 'String', 'FIN_API_BASE_URL', '"' + escapedFinApiBaseUrl + '"'
+        buildConfigField 'String', 'FIN_AUTH_BASE_URL', '"' + escapedFinAuthBaseUrl + '"'
     }
 
     signingConfigs {
