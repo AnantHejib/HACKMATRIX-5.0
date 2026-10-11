@@ -48,6 +48,9 @@ export async function handleAuth(request, authOverride) {
       if(request.method==='POST' && ((request.headers.get('content-type')||'').split(';')[0].trim().toLowerCase()!=='application/json' || (mode&&mode!=='cors'&&mode!=='same-origin') || (dest&&dest!=='empty')))
         return json(request,{error:'Unsupported authentication request.'},403);
       for(const name of ['origin','referer','sec-fetch-site','sec-fetch-mode','sec-fetch-dest','sec-fetch-user'])headers.delete(name);
+      // Better Auth requires an Origin for credential endpoints. Use only the
+      // configured FIN backend origin for native file:// JSON requests.
+      headers.set('origin', new URL(auth.options.baseURL).origin);
     }
     headers.set('content-type', 'application/json');
     const {response,deliveryFailed} = await runAuthRequest(()=>auth.handler(new Request(url, { method: request.method, headers, body: body ? JSON.stringify(body) : undefined })));
